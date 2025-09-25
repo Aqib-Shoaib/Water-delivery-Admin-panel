@@ -1,1 +1,72 @@
 @import "tailwindcss";
+
+
+/* --primary-brown: rgb(71, 44, 28);
+--light-blue: rgb(164, 220, 252);
+--medium-blue: rgb(68, 153, 228); */
+
+/* Design tokens for the login page */
+:root {
+  --primary-brown: rgb(71, 44, 28);
+  --light-blue: rgb(164, 220, 252);
+  --medium-blue: rgb(68, 153, 228);
+}
+
+.bg-primary { background-color: var(--primary-brown); }
+.bg-light-blue { background-color: var(--light-blue); }
+.bg-medium-blue { background-color: var(--medium-blue); }
+.text-primary { color: var(--primary-brown); }
+.text-medium-blue { color: var(--medium-blue); }
+.border-primary { border-color: var(--primary-brown); }
+.border-medium-blue { border-color: var(--medium-blue); }
+
+.login-container {
+  background: linear-gradient(135deg, var(--light-blue) 0%, var(--medium-blue) 100%);
+  min-height: 100vh;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--medium-blue);
+  box-shadow: 0 0 0 3px rgba(68, 153, 228, 0.1);
+}
+
+.login-btn { transition: all 0.2s ease; }
+.login-btn:hover { background-color: rgb(55, 34, 22); transform: translateY(-1px); }
+
+.floating-shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.1;
+  animation: float 6s ease-in-out infinite;
+}
+
+.floating-shape:nth-child(1) {
+  width: 80px; height: 80px; top: 20%; left: 10%;
+  background-color: var(--primary-brown);
+  animation-delay: 0s;
+}
+.floating-shape:nth-child(2) {
+  width: 120px; height: 120px; top: 60%; right: 15%;
+  background-color: white;
+  animation-delay: 2s;
+}
+.floating-shape:nth-child(3) {
+  width: 60px; height: 60px; bottom: 20%; left: 20%;
+  background-color: var(--primary-brown);
+  animation-delay: 4s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.demo-notice {
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 2px solid var(--medium-blue);
+  color: var(--primary-brown);
+}
+
+/* Global cursor pointers */
+button, a, [role="button"], .cursor-pointer { cursor: pointer; }
