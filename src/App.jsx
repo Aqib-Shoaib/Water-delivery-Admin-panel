@@ -5,6 +5,10 @@ import Products from './pages/Products.jsx'
 import Orders from './pages/Orders.jsx'
 import Drivers from './pages/Drivers.jsx'
 import Regions from './pages/Regions.jsx'
+import Customers from './pages/Customers.jsx'
+import Settings from './pages/Settings.jsx'
+import Deals from './pages/Deals.jsx'
+import Reminders from './pages/Reminders.jsx'
 import Login from './pages/Login.jsx'
 import Users from './pages/Users.jsx'
 import { useAuth } from './context/AuthContext.jsx'
@@ -41,7 +45,11 @@ function App() {
         <Route path="/users" element={<RequireAdmin><AdminLayout><Users /></AdminLayout></RequireAdmin>} />
         <Route path="/orders" element={<RequireAdmin><AdminLayout><Orders /></AdminLayout></RequireAdmin>} />
         <Route path="/drivers" element={<RequireAdmin><AdminLayout><Drivers /></AdminLayout></RequireAdmin>} />
+        <Route path="/customers" element={<RequireAdmin><AdminLayout><Customers /></AdminLayout></RequireAdmin>} />
         <Route path="/regions" element={<RequireAdmin><AdminLayout><Regions /></AdminLayout></RequireAdmin>} />
+        <Route path="/settings" element={<RequireAdmin><AdminLayout><Settings /></AdminLayout></RequireAdmin>} />
+        <Route path="/deals" element={<RequireAdmin><AdminLayout><Deals /></AdminLayout></RequireAdmin>} />
+        <Route path="/reminders" element={<RequireAdmin><AdminLayout><Reminders /></AdminLayout></RequireAdmin>} />
       </Routes>
     </BrowserRouter>
   )

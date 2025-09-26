@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 
-export default function AddDriverModal({ open, onClose, onCreated, apiBase }) {
+export default function AddCustomerModal({ open, onClose, onCreated, apiBase }) {
   const { token } = useAuth()
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', region: '' })
   const [loading, setLoading] = useState(false)
@@ -33,7 +33,7 @@ export default function AddDriverModal({ open, onClose, onCreated, apiBase }) {
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
-        role: 'driver',
+        role: 'customer',
         phone: form.phone.trim() || undefined,
         region: form.region || undefined,
       }
@@ -53,8 +53,8 @@ export default function AddDriverModal({ open, onClose, onCreated, apiBase }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-white rounded-xl shadow-xl p-6">
-        <h3 className="text-lg font-semibold text-primary">Add Driver</h3>
-        <p className="text-sm text-gray-600 mt-1">Create a new driver account.</p>
+        <h3 className="text-lg font-semibold text-primary">Add Customer</h3>
+        <p className="text-sm text-gray-600 mt-1">Create a new customer account.</p>
 
         <form onSubmit={onSubmit} className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-1">

@@ -1,13 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import Card from '../components/ui/Card.jsx'
-import Button from '../components/ui/Button.jsx'
-import Input from '../components/ui/Input.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-import AddDriverModal from '../components/modals/AddDriverModal.jsx'
+import AddCustomerModal from '../components/modals/AddCustomerModal.jsx'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
-export default function Drivers() {
+export default function Customers() {
   const { token } = useAuth()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -23,7 +21,7 @@ export default function Drivers() {
       const res = await fetch(`${API_BASE}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      setItems(data.filter(u => u.role === 'driver'))
+      setItems(data.filter(u => u.role === 'customer'))
     } catch (e) {
       setError(e.message)
     } finally {
@@ -36,7 +34,7 @@ export default function Drivers() {
   const onCreated = async () => { await load() }
 
   const onDelete = async (id) => {
-    if (!confirm('Delete this driver?')) return
+    if (!confirm('Delete this customer?')) return
     try {
       const res = await fetch(`${API_BASE}/api/admin/users/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -49,12 +47,12 @@ export default function Drivers() {
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-primary">Drivers</h2>
-            <p className="text-xs text-gray-500">Manage driver accounts</p>
+            <h2 className="text-lg font-semibold text-primary">Customers</h2>
+            <p className="text-xs text-gray-500">Manage customer accounts</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={load} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Refresh</button>
-            <button onClick={() => setShowAdd(true)} className="px-3 py-2 text-sm rounded-md bg-primary text-white hover:bg-primary">Add Driver</button>
+            <button onClick={() => setShowAdd(true)} className="px-3 py-2 text-sm rounded-md bg-primary text-white hover:bg-primary">Add Customer</button>
           </div>
         </div>
         {loading ? (
@@ -84,7 +82,7 @@ export default function Drivers() {
                   </tr>
                 ))}
                 {items.length === 0 && (
-                  <tr><td className="py-4 text-gray-500" colSpan={4}>No drivers</td></tr>
+                  <tr><td className="py-4 text-gray-500" colSpan={5}>No customers</td></tr>
                 )}
               </tbody>
             </table>
@@ -92,7 +90,7 @@ export default function Drivers() {
         )}
       </Card>
 
-      <AddDriverModal open={showAdd} onClose={() => setShowAdd(false)} onCreated={onCreated} apiBase={API_BASE} />
+      <AddCustomerModal open={showAdd} onClose={() => setShowAdd(false)} onCreated={onCreated} apiBase={API_BASE} />
     </div>
   )
 }

@@ -1,15 +1,28 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 
 const ROLES = ['admin', 'customer', 'driver']
 
 export default function AddUserModal({ open, onClose, onCreated, apiBase }) {
   const { token } = useAuth()
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer', phone: '', permissions: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer', phone: '', permissions: '', region: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [regions, setRegions] = useState([])
 
   const headers = useMemo(() => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }), [token])
+
+  useEffect(() => {
+    async function loadRegions() {
+      try {
+        const res = await fetch(`${apiBase}/api/regions`, { headers })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        setRegions(data)
+      } catch { /* ignore */ }
+    }
+    loadRegions()
+  }, [open])
 
   if (!open) return null
 
@@ -25,10 +38,11 @@ export default function AddUserModal({ open, onClose, onCreated, apiBase }) {
         role: form.role,
         phone: form.phone.trim() || undefined,
         permissions: form.permissions.split(',').map(s => s.trim()).filter(Boolean),
+        region: form.region || undefined,
       }
       const res = await fetch(`${apiBase}/api/admin/users`, { method: 'POST', headers, body: JSON.stringify(payload) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setForm({ name: '', email: '', password: '', role: 'customer', phone: '', permissions: '' })
+      setForm({ name: '', email: '', password: '', role: 'customer', phone: '', permissions: '', region: '' })
       onCreated && onCreated()
       onClose()
     } catch (e) {
@@ -66,6 +80,13 @@ export default function AddUserModal({ open, onClose, onCreated, apiBase }) {
             <label className="block text-sm font-medium text-primary mb-1">Role</label>
             <select className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
               {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Region</label>
+            <select className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.region} onChange={e => setForm({ ...form, region: e.target.value })}>
+              <option value="">— None —</option>
+              {regions.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
             </select>
           </div>
           <div className="sm:col-span-1">

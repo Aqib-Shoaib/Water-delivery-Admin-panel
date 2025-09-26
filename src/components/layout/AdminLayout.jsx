@@ -1,9 +1,12 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import ConfirmModal from '../modals/ConfirmModal.jsx'
+import { useSettings } from '../../context/SettingsContext.jsx'
+import NotificationsContainer from '../ui/NotificationsContainer.jsx'
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
-function Sidebar({ open, onClose }) {
+function Sidebar({ open, onClose, settings }) {
   const { user } = useAuth()
   const navCls = ({ isActive }) =>
     `nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
@@ -13,18 +16,22 @@ function Sidebar({ open, onClose }) {
   const initials = (user?.email || 'AD').slice(0, 2).toUpperCase()
 
   return (
-    <div className={`sidebar fixed left-0 top-0 h-full w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-40 ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+    <div className={`w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-40 ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 relative`}>
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center space-x-3">
-          <div className="bg-primary w-10 h-10 rounded-lg flex items-center justify-center">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
+          {settings?.logoUrl ? (
+            <img src={settings.logoUrl} alt="Logo" className="w-10 h-10 object-contain rounded-lg bg-white" />
+          ) : (
+            <div className="bg-primary w-10 h-10 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+          )}
           <div>
-            <h2 className="text-lg font-bold text-primary">AdminPanel</h2>
-            <p className="text-xs text-gray-500">Dashboard v2.0</p>
+            <h2 className="text-lg font-bold text-primary">{settings?.siteName || 'AdminPanel'}</h2>
+            <p className="text-xs text-gray-500">Dashboard</p>
           </div>
           <button className="ml-auto md:hidden p-2 rounded hover:bg-gray-100" onClick={onClose} aria-label="Close sidebar">✕</button>
         </div>
@@ -64,6 +71,18 @@ function Sidebar({ open, onClose }) {
           </svg>
           <span>Drivers</span>
         </NavLink>
+        <NavLink to="/customers" className={navCls}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5V8H2v12h5m10 0V8m0 12H7m0 0v-2a3 3 0 013-3h4a3 3 0 013 3v2" />
+          </svg>
+          <span>Customers</span>
+        </NavLink>
+        <NavLink to="/regions" className={navCls}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7l9-4 9 4-9 4-9-4zm0 6l9 4 9-4" />
+          </svg>
+          <span>Zones</span>
+        </NavLink>
       </nav>
 
       {/* User Profile */}
@@ -83,14 +102,62 @@ function Sidebar({ open, onClose }) {
           </button>
         </div>
       </div>
+
+      {/* Watermark Logo */}
+      {settings?.logoUrl && (
+        <img src={settings.logoUrl} alt="Logo watermark" className="pointer-events-none select-none opacity-10 absolute bottom-24 left-1/2 -translate-x-1/2 w-40" />
+      )}
     </div>
   )
 }
 
-function Topbar({ onMenu, onRequestLogout }) {
-  const { user } = useAuth()
+function Topbar({ onMenu, onRequestLogout, settings }) {
+  const { user, token } = useAuth()
   const initials = (user?.email || 'AD').slice(0, 2).toUpperCase()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [dealsOpen, setDealsOpen] = useState(false)
+  const [remindersOpen, setRemindersOpen] = useState(false)
+  const [deals, setDeals] = useState([])
+  const [reminders, setReminders] = useState([])
+  const [loadingDeals, setLoadingDeals] = useState(false)
+  const [loadingReminders, setLoadingReminders] = useState(false)
+  const whatsappHref = (() => {
+    const link = settings?.whatsappLink
+    const phone = settings?.whatsappPhone
+    if (link) return link
+    if (phone) {
+      const digits = String(phone).replace(/[^0-9]/g, '')
+      if (digits) return `https://wa.me/${digits}`
+    }
+    return null
+  })()
+
+  useEffect(() => {
+    async function loadDeals() {
+      setLoadingDeals(true)
+      try {
+        const res = await fetch(`${API_BASE}/api/deals`, { headers: { Authorization: `Bearer ${token}` } })
+        if (res.ok) {
+          const data = await res.json()
+          setDeals(data.slice(0, 5))
+        }
+      } finally { setLoadingDeals(false) }
+    }
+    async function loadReminders() {
+      setLoadingReminders(true)
+      try {
+        const res = await fetch(`${API_BASE}/api/reminders`, { headers: { Authorization: `Bearer ${token}` } })
+        if (res.ok) {
+          const data = await res.json()
+          setReminders(data.slice(0, 5))
+        }
+      } finally { setLoadingReminders(false) }
+    }
+    if (token) {
+      loadDeals()
+      loadReminders()
+    }
+  }, [token])
   return (
     <header className="topbar sticky top-0 z-30 px-6 py-4 border-b border-gray-200 bg-white/95 backdrop-blur">
       <div className="flex items-center justify-between">
@@ -119,6 +186,78 @@ function Topbar({ onMenu, onRequestLogout }) {
             </svg>
           </div>
 
+          {/* Help (WhatsApp) */}
+          <a href={whatsappHref || '/settings'} target={whatsappHref ? '_blank' : undefined} rel={whatsappHref ? 'noopener noreferrer' : undefined} className="relative p-2 rounded-lg hover:bg-gray-100" title="Help">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-6 h-6 text-green-600" fill="currentColor" aria-hidden="true">
+              <path d="M19.11 17.1c-.29-.17-1.7-.94-1.97-1.05-.26-.1-.45-.16-.64.16-.19.32-.75 1.05-.92 1.26-.17.2-.34.23-.63.1-.29-.14-1.23-.45-2.35-1.47-.87-.78-1.45-1.76-1.61-2.05-.17-.29-.02-.46.12-.61.12-.13.29-.34.43-.5.14-.17.19-.3.28-.5.09-.2.05-.37-.02-.52-.07-.15-.65-1.61-.9-2.2-.24-.57-.49-.49-.66-.49l-.55-.01c-.19 0-.5.07-.77.36-.26.29-1.01 1-1.01 2.44 0 1.44 1.03 2.83 1.18 3.02.14.19 2.03 3.12 4.92 4.4.69.3 1.22.48 1.63.61.69.22 1.31.2 1.8.12.55-.08 1.71-.7 1.95-1.39.24-.69.24-1.27.17-1.38-.06-.12-.26-.2-.54-.35z"/>
+              <path d="M27.6 4.4A12.54 12.54 0 0016 0C7.16 0 0 7.16 0 16a15.9 15.9 0 002.01 7.81L0 32l8.39-2.2A16 16 0 0016 32c8.84 0 16-7.16 16-16 0-4.27-1.66-8.29-4.4-11.6zM16 29.33c-2.73 0-5.26-.86-7.36-2.35l-.53-.37-4.91 1.29 1.31-4.8-.34-.55A12.7 12.7 0 013.11 16c0-7.09 5.8-12.89 12.89-12.89 3.45 0 6.69 1.36 9.13 3.8A12.82 12.82 0 0128.89 16C28.89 23.09 23.09 29.33 16 29.33z"/>
+            </svg>
+          </a>
+
+          {/* Deals */}
+          <div className="relative">
+            <button className="relative p-2 rounded-lg hover:bg-gray-100" title="Deals" onClick={() => { setDealsOpen(o => !o); setRemindersOpen(false) }}>
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </button>
+            {dealsOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                <div className="px-3 py-2 text-sm font-medium text-primary border-b">Latest Deals</div>
+                <div className="max-h-64 overflow-y-auto">
+                  {loadingDeals ? (
+                    <div className="p-3 text-sm text-gray-500">Loading...</div>
+                  ) : deals.length === 0 ? (
+                    <div className="p-3 text-sm text-gray-500">No deals</div>
+                  ) : (
+                    deals.map(d => (
+                      <div key={d._id} className="p-3 border-b last:border-b-0">
+                        <div className="text-sm font-medium text-primary truncate">{d.title}</div>
+                        {d.description && <div className="text-xs text-gray-600 truncate">{d.description}</div>}
+                        <div className="text-[11px] text-gray-400 mt-0.5">{d.active ? 'Active' : 'Inactive'}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <NavLink to="/deals" className={({isActive}) => `block px-3 py-2 text-sm hover:bg-gray-50 ${isActive ? 'text-primary' : 'text-gray-700'}`} onClick={() => setDealsOpen(false)}>
+                  View all deals
+                </NavLink>
+              </div>
+            )}
+          </div>
+
+          {/* Reminders */}
+          <div className="relative">
+            <button className="relative p-2 rounded-lg hover:bg-gray-100" title="Reminders" onClick={() => { setRemindersOpen(o => !o); setDealsOpen(false) }}>
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3M12 22a10 10 0 110-20 10 10 0 010 20z" />
+              </svg>
+            </button>
+            {remindersOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                <div className="px-3 py-2 text-sm font-medium text-primary border-b">Upcoming Reminders</div>
+                <div className="max-h-64 overflow-y-auto">
+                  {loadingReminders ? (
+                    <div className="p-3 text-sm text-gray-500">Loading...</div>
+                  ) : reminders.length === 0 ? (
+                    <div className="p-3 text-sm text-gray-500">No reminders</div>
+                  ) : (
+                    reminders.map(r => (
+                      <div key={r._id} className="p-3 border-b last:border-b-0">
+                        <div className="text-sm font-medium text-primary truncate">{r.title}</div>
+                        {r.description && <div className="text-xs text-gray-600 truncate">{r.description}</div>}
+                        <div className="text-[11px] text-gray-400 mt-0.5">{new Date(r.remindAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <NavLink to="/reminders" className={({isActive}) => `block px-3 py-2 text-sm hover:bg-gray-50 ${isActive ? 'text-primary' : 'text-gray-700'}`} onClick={() => setRemindersOpen(false)}>
+                  View all reminders
+                </NavLink>
+              </div>
+            )}
+          </div>
+
           {/* Notifications */}
           <button className="relative p-2 rounded-lg hover:bg-gray-100" title="Notifications">
             <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,6 +278,9 @@ function Topbar({ onMenu, onRequestLogout }) {
             </button>
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                <NavLink to="/settings" className={({isActive}) => `block px-3 py-2 text-sm hover:bg-gray-50 ${isActive ? 'text-primary' : 'text-gray-700'}`} onClick={() => setMenuOpen(false)}>
+                  Settings
+                </NavLink>
                 <NavLink to="/profile" className={({isActive}) => `block px-3 py-2 text-sm hover:bg-gray-50 ${isActive ? 'text-primary' : 'text-gray-700'}`} onClick={() => setMenuOpen(false)}>
                   Profile
                 </NavLink>
@@ -158,13 +300,14 @@ export default function AdminLayout({ children }) {
   const [open, setOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const { logout } = useAuth()
+  const { settings } = useSettings()
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <Sidebar open={open} onClose={() => setOpen(false)} />
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex">
+      <Sidebar open={open} onClose={() => setOpen(false)} settings={settings} />
 
-      <div className="md:pl-64">
-        <Topbar onMenu={() => setOpen(true)} onRequestLogout={() => setShowLogoutConfirm(true)} />
+      <div className="flex-1">
+        <Topbar onMenu={() => setOpen(true)} onRequestLogout={() => setShowLogoutConfirm(true)} settings={settings} />
 
         <main className="p-4 md:p-6">
           <div className="max-w-6xl mx-auto">
@@ -186,6 +329,9 @@ export default function AdminLayout({ children }) {
         onCancel={() => setShowLogoutConfirm(false)}
         onConfirm={() => { setShowLogoutConfirm(false); logout(); }}
       />
+
+      {/* Notifications UI */}
+      <NotificationsContainer />
     </div>
   )
 }
