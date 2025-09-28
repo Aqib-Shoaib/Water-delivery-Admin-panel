@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Card from '../components/ui/Card.jsx'
 import Button from '../components/ui/Button.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import useTableControls from '../hooks/useTableControls'
+import TableControls from '../components/ui/TableControls.jsx'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
@@ -12,6 +14,8 @@ export default function Orders() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [updatingId, setUpdatingId] = useState('')
+  const searchable = ['customer.name','customer.email','status','address','assignedDriver.name','items.product.name']
+  const { items: view, controls } = useTableControls(items, { initialPageSize: 10, searchableKeys: searchable })
 
   const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token])
 
@@ -64,8 +68,11 @@ export default function Orders() {
         {loading ? (
           <div className="py-10 text-center text-gray-500">Loading...</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+          <div className="mt-2">
+            <>
+              <TableControls controls={controls} className="mb-3" />
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left border-b">
                   <th className="py-2 pr-4">Created</th>
@@ -79,7 +86,7 @@ export default function Orders() {
                 </tr>
               </thead>
               <tbody>
-                {items.map(o => (
+                {view.map(o => (
                   <tr key={o._id} className="border-b last:border-b-0 align-top">
                     <td className="py-2 pr-4 whitespace-nowrap">{new Date(o.createdAt || o._id?.toString()?.substring(0,8) * 1000).toLocaleString()}</td>
                     <td className="py-2 pr-4">{o.customer?.name || '—'}<div className="text-xs text-gray-500">{o.customer?.email}</div></td>
@@ -124,11 +131,13 @@ export default function Orders() {
                     </td>
                   </tr>
                 ))}
-                {items.length === 0 && (
+                {view.length === 0 && (
                   <tr><td className="py-6 text-gray-500" colSpan={8}>No orders</td></tr>
                 )}
               </tbody>
-            </table>
+                </table>
+              </div>
+            </>
           </div>
         )}
       </Card>

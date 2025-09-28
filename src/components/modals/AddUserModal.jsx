@@ -5,7 +5,7 @@ const ROLES = ['admin', 'customer', 'driver']
 
 export default function AddUserModal({ open, onClose, onCreated, apiBase }) {
   const { token } = useAuth()
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer', phone: '', permissions: '', region: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer', phone: '', cnic: '', permissions: '', region: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [regions, setRegions] = useState([])
@@ -37,12 +37,13 @@ export default function AddUserModal({ open, onClose, onCreated, apiBase }) {
         password: form.password,
         role: form.role,
         phone: form.phone.trim() || undefined,
+        cnic: form.cnic.trim() || undefined,
         permissions: form.permissions.split(',').map(s => s.trim()).filter(Boolean),
         region: form.region || undefined,
       }
       const res = await fetch(`${apiBase}/api/admin/users`, { method: 'POST', headers, body: JSON.stringify(payload) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setForm({ name: '', email: '', password: '', role: 'customer', phone: '', permissions: '', region: '' })
+      setForm({ name: '', email: '', password: '', role: 'customer', phone: '', cnic: '', permissions: '', region: '' })
       onCreated && onCreated()
       onClose()
     } catch (e) {
@@ -67,6 +68,10 @@ export default function AddUserModal({ open, onClose, onCreated, apiBase }) {
           <div className="sm:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Email</label>
             <input type="email" className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">CNIC</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="e.g. 12345-1234567-1" value={form.cnic} onChange={e => setForm({ ...form, cnic: e.target.value })} />
           </div>
           <div className="sm:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Password</label>

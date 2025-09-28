@@ -49,6 +49,56 @@ export default function Settings() {
         )}
       </Card>
 
+      {/* Mobile Apps - Customer App */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-primary">Customer App</h2>
+            <p className="text-xs text-gray-500">Store listing and branding for the customer app</p>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="text-sm"><span className="font-medium text-primary">Name:</span> {settings?.customerAppName || '—'}</div>
+            <div className="text-sm"><span className="font-medium text-primary">Android Link:</span> {settings?.customerAppAndroidLink ? <a className="text-medium-blue underline" href={settings.customerAppAndroidLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
+            <div className="text-sm"><span className="font-medium text-primary">iOS Link:</span> {settings?.customerAppIOSLink ? <a className="text-medium-blue underline" href={settings.customerAppIOSLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
+          </div>
+          <div>
+            <div className="text-sm font-medium text-primary mb-1">Logo</div>
+            {settings?.customerAppLogoUrl ? (
+              <img src={settings.customerAppLogoUrl} alt="Customer App Logo" className="h-14 object-contain" />
+            ) : (
+              <div className="h-14 w-28 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 text-xs">No logo</div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Mobile Apps - Driver App */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-primary">Driver App</h2>
+            <p className="text-xs text-gray-500">Store listing and branding for the driver app</p>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="text-sm"><span className="font-medium text-primary">Name:</span> {settings?.driverAppName || '—'}</div>
+            <div className="text-sm"><span className="font-medium text-primary">Android Link:</span> {settings?.driverAppAndroidLink ? <a className="text-medium-blue underline" href={settings.driverAppAndroidLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
+            <div className="text-sm"><span className="font-medium text-primary">iOS Link:</span> {settings?.driverAppIOSLink ? <a className="text-medium-blue underline" href={settings.driverAppIOSLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
+          </div>
+          <div>
+            <div className="text-sm font-medium text-primary mb-1">Logo</div>
+            {settings?.driverAppLogoUrl ? (
+              <img src={settings.driverAppLogoUrl} alt="Driver App Logo" className="h-14 object-contain" />
+            ) : (
+              <div className="h-14 w-28 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 text-xs">No logo</div>
+            )}
+          </div>
+        </div>
+      </Card>
+
       <SiteSettingsModal open={open} onClose={(changed) => { setOpen(false); if (changed) refresh() }} apiBase={API_BASE} initial={settings || {}} />
     </div>
   )

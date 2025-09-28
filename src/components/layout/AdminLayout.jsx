@@ -83,6 +83,12 @@ function Sidebar({ open, onClose, settings }) {
           </svg>
           <span>Zones</span>
         </NavLink>
+        <NavLink to="/health-reminders" className={navCls}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3M12 22a10 10 0 110-20 10 10 0 010 20z" />
+          </svg>
+          <span>Health Reminders</span>
+        </NavLink>
       </nav>
 
       {/* User Profile */}
@@ -117,10 +123,15 @@ function Topbar({ onMenu, onRequestLogout, settings }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [dealsOpen, setDealsOpen] = useState(false)
   const [remindersOpen, setRemindersOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [deals, setDeals] = useState([])
   const [reminders, setReminders] = useState([])
   const [loadingDeals, setLoadingDeals] = useState(false)
   const [loadingReminders, setLoadingReminders] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [loadingNotifications, setLoadingNotifications] = useState(false)
   const whatsappHref = (() => {
     const link = settings?.whatsappLink
     const phone = settings?.whatsappPhone
@@ -153,9 +164,20 @@ function Topbar({ onMenu, onRequestLogout, settings }) {
         }
       } finally { setLoadingReminders(false) }
     }
+    async function loadNotifications() {
+      setLoadingNotifications(true)
+      try {
+        const res = await fetch(`${API_BASE}/api/notifications`, { headers: { Authorization: `Bearer ${token}` } })
+        if (res.ok) {
+          const data = await res.json()
+          setNotifications(data.slice(0, 7))
+        }
+      } finally { setLoadingNotifications(false) }
+    }
     if (token) {
       loadDeals()
       loadReminders()
+      loadNotifications()
     }
   }, [token])
   return (
@@ -186,13 +208,52 @@ function Topbar({ onMenu, onRequestLogout, settings }) {
             </svg>
           </div>
 
-          {/* Help (WhatsApp) */}
-          <a href={whatsappHref || '/settings'} target={whatsappHref ? '_blank' : undefined} rel={whatsappHref ? 'noopener noreferrer' : undefined} className="relative p-2 rounded-lg hover:bg-gray-100" title="Help">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-6 h-6 text-green-600" fill="currentColor" aria-hidden="true">
-              <path d="M19.11 17.1c-.29-.17-1.7-.94-1.97-1.05-.26-.1-.45-.16-.64.16-.19.32-.75 1.05-.92 1.26-.17.2-.34.23-.63.1-.29-.14-1.23-.45-2.35-1.47-.87-.78-1.45-1.76-1.61-2.05-.17-.29-.02-.46.12-.61.12-.13.29-.34.43-.5.14-.17.19-.3.28-.5.09-.2.05-.37-.02-.52-.07-.15-.65-1.61-.9-2.2-.24-.57-.49-.49-.66-.49l-.55-.01c-.19 0-.5.07-.77.36-.26.29-1.01 1-1.01 2.44 0 1.44 1.03 2.83 1.18 3.02.14.19 2.03 3.12 4.92 4.4.69.3 1.22.48 1.63.61.69.22 1.31.2 1.8.12.55-.08 1.71-.7 1.95-1.39.24-.69.24-1.27.17-1.38-.06-.12-.26-.2-.54-.35z"/>
-              <path d="M27.6 4.4A12.54 12.54 0 0016 0C7.16 0 0 7.16 0 16a15.9 15.9 0 002.01 7.81L0 32l8.39-2.2A16 16 0 0016 32c8.84 0 16-7.16 16-16 0-4.27-1.66-8.29-4.4-11.6zM16 29.33c-2.73 0-5.26-.86-7.36-2.35l-.53-.37-4.91 1.29 1.31-4.8-.34-.55A12.7 12.7 0 013.11 16c0-7.09 5.8-12.89 12.89-12.89 3.45 0 6.69 1.36 9.13 3.8A12.82 12.82 0 0128.89 16C28.89 23.09 23.09 29.33 16 29.33z"/>
-            </svg>
-          </a>
+          {/* Help dropdown */}
+          <div className="relative">
+            <button
+              className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+              title="Help"
+              onClick={() => setHelpOpen(o => !o)}
+            >
+              Help
+            </button>
+            {helpOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                <div className="px-3 py-2 text-sm font-medium text-primary border-b">Support</div>
+                <div className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-gray-500">WhatsApp Number</div>
+                      <div className="text-sm text-primary font-medium">{settings?.whatsappPhone || 'Not set'}</div>
+                    </div>
+                    <button
+                      className="px-2 py-1 text-xs rounded-md border border-gray-300 hover:bg-gray-50"
+                      onClick={async () => {
+                        const num = settings?.whatsappPhone || ''
+                        if (!num) return
+                        try {
+                          await navigator.clipboard.writeText(num)
+                          setCopied(true)
+                          setTimeout(() => setCopied(false), 1500)
+                        } catch {}
+                      }}
+                    >
+                      {copied ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <a
+                    href={whatsappHref || '/settings'}
+                    target={whatsappHref ? '_blank' : undefined}
+                    rel={whatsappHref ? 'noopener noreferrer' : undefined}
+                    className={`block text-center px-3 py-2 text-sm rounded-md ${whatsappHref ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    onClick={() => setHelpOpen(false)}
+                  >
+                    {whatsappHref ? 'Open WhatsApp' : 'Set WhatsApp in Settings'}
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Deals */}
           <div className="relative">
@@ -259,12 +320,40 @@ function Topbar({ onMenu, onRequestLogout, settings }) {
           </div>
 
           {/* Notifications */}
-          <button className="relative p-2 rounded-lg hover:bg-gray-100" title="Notifications">
-            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.07 2.82l3.12 3.12M7.05 5.84l3.12 3.12M4.03 8.86l3.12 3.12M1.01 11.88l3.12 3.12" />
-            </svg>
-            <span className="notification-dot absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
+          <div className="relative">
+            <button
+              className="relative p-2 rounded-lg hover:bg-gray-100"
+              title="Notifications"
+              onClick={() => { setNotificationsOpen(o => !o); setDealsOpen(false); setRemindersOpen(false); setHelpOpen(false) }}
+            >
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5zM10.07 2.82l3.12 3.12M7.05 5.84l3.12 3.12M4.03 8.86l3.12 3.12M1.01 11.88l3.12 3.12" />
+              </svg>
+              {notifications?.length > 0 && (
+                <span className="notification-dot absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" />
+              )}
+            </button>
+            {notificationsOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                <div className="px-3 py-2 text-sm font-medium text-primary border-b">Notifications</div>
+                <div className="max-h-72 overflow-y-auto">
+                  {loadingNotifications ? (
+                    <div className="p-3 text-sm text-gray-500">Loading...</div>
+                  ) : notifications.length === 0 ? (
+                    <div className="p-3 text-sm text-gray-500">No notifications</div>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n._id} className="p-3 border-b last:border-b-0">
+                        <div className="text-sm font-medium text-primary truncate">{n.title}</div>
+                        {n.message && <div className="text-xs text-gray-600 truncate">{n.message}</div>}
+                        <div className="text-[11px] text-gray-400 mt-0.5">{new Date(n.createdAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Profile dropdown */}
           <div className="relative">

@@ -4,6 +4,8 @@ import Button from '../components/ui/Button.jsx'
 import Input from '../components/ui/Input.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import AddUserModal from '../components/modals/AddUserModal.jsx'
+import useTableControls from '../hooks/useTableControls'
+import TableControls from '../components/ui/TableControls.jsx'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 const ROLES = ['admin', 'customer', 'driver']
@@ -14,6 +16,7 @@ export default function Users() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const { items: view, controls } = useTableControls(items, { initialPageSize: 10, searchableKeys: ['name','email','role','cnic'] })
 
   const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token])
 
@@ -78,19 +81,23 @@ export default function Users() {
         {loading ? (
           <div className="py-10 text-center text-gray-500">Loading...</div>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
+          <div className="mt-4">
+            <>
+              <TableControls controls={controls} className="mb-3" />
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left border-b">
                   <th className="py-2 pr-4">Name</th>
                   <th className="py-2 pr-4">Email</th>
+                  <th className="py-2 pr-4">CNIC</th>
                   <th className="py-2 pr-4">Role</th>
                   <th className="py-2 pr-4">Permissions</th>
                   <th className="py-2 pr-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map(u => (
+                {view.map(u => (
                   <tr key={u._id} className="border-b last:border-b-0 hover:bg-gray-50">
                     <td className="py-2 pr-4">
                       <div className="flex items-center gap-2">
@@ -99,6 +106,7 @@ export default function Users() {
                       </div>
                     </td>
                     <td className="py-2 pr-4">{u.email}</td>
+                    <td className="py-2 pr-4">{u.cnic || '—'}</td>
                     <td className="py-2 pr-4"><span className={roleBadgeCls(u.role)}>{u.role}</span></td>
                     <td className="py-2 pr-4">{(u.permissions || []).join(', ')}</td>
                     <td className="py-2 pr-4">
@@ -112,11 +120,13 @@ export default function Users() {
                     </td>
                   </tr>
                 ))}
-                {items.length === 0 && (
+                {view.length === 0 && (
                   <tr><td className="py-4 text-gray-500" colSpan={5}>No users</td></tr>
                 )}
               </tbody>
-            </table>
+                </table>
+              </div>
+            </>
           </div>
         )}
       </Card>

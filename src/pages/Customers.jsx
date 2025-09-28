@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Card from '../components/ui/Card.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import AddCustomerModal from '../components/modals/AddCustomerModal.jsx'
+import useTableControls from '../hooks/useTableControls'
+import TableControls from '../components/ui/TableControls.jsx'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
@@ -11,6 +13,8 @@ export default function Customers() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+
+  const { items: view, controls } = useTableControls(items, { initialPageSize: 10, searchableKeys: ['name','email','phone','region.name','cnic'] })
 
   const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token])
 
@@ -58,22 +62,27 @@ export default function Customers() {
         {loading ? (
           <div className="py-10 text-center text-gray-500">Loading...</div>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
+          <div className="mt-4">
+            <>
+              <TableControls controls={controls} className="mb-3" />
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left border-b">
                   <th className="py-2 pr-4">Name</th>
                   <th className="py-2 pr-4">Email</th>
+                  <th className="py-2 pr-4">CNIC</th>
                   <th className="py-2 pr-4">Phone</th>
                   <th className="py-2 pr-4">Region</th>
                   <th className="py-2 pr-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map(u => (
+                {view.map(u => (
                   <tr key={u._id} className="border-b last:border-b-0 hover:bg-gray-50">
                     <td className="py-2 pr-4">{u.name}</td>
                     <td className="py-2 pr-4">{u.email}</td>
+                    <td className="py-2 pr-4">{u.cnic || '—'}</td>
                     <td className="py-2 pr-4">{u.phone || '—'}</td>
                     <td className="py-2 pr-4">{(u.region && (u.region.name || u.region)) || '—'}</td>
                     <td className="py-2 pr-4">
@@ -81,11 +90,13 @@ export default function Customers() {
                     </td>
                   </tr>
                 ))}
-                {items.length === 0 && (
+                {view.length === 0 && (
                   <tr><td className="py-4 text-gray-500" colSpan={5}>No customers</td></tr>
                 )}
               </tbody>
-            </table>
+                </table>
+              </div>
+            </>
           </div>
         )}
       </Card>

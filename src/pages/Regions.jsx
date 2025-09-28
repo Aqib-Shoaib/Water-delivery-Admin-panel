@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Card from '../components/ui/Card.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import RegionDetailModal from '../components/modals/RegionDetailModal.jsx'
+import useTableControls from '../hooks/useTableControls'
+import TableControls from '../components/ui/TableControls.jsx'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
@@ -15,6 +17,7 @@ export default function Regions() {
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
   const [form, setForm] = useState({ name: '', description: '', zipCodes: '', active: true })
+  const { items: view, controls } = useTableControls(items, { initialPageSize: 10, searchableKeys: ['name','description','zipCodes'] })
 
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token])
 
@@ -109,38 +112,41 @@ export default function Regions() {
         {loading ? (
           <div className="py-10 text-center text-gray-500">Loading...</div>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="py-2 pr-4">Name</th>
-                  <th className="py-2 pr-4">Description</th>
-                  <th className="py-2 pr-4">ZIP Codes</th>
-                  <th className="py-2 pr-4">Active</th>
-                  <th className="py-2 pr-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map(r => (
-                  <tr key={r._id} className="border-b last:border-b-0 hover:bg-gray-50">
-                    <td className="py-2 pr-4">{r.name}</td>
-                    <td className="py-2 pr-4">{r.description || '—'}</td>
-                    <td className="py-2 pr-4">{(r.zipCodes || []).join(', ') || '—'}</td>
-                    <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded-full text-xs border ${r.active ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>{r.active ? 'Active' : 'Inactive'}</span>
-                    </td>
-                    <td className="py-2 pr-4 flex flex-wrap gap-2">
-                      <button className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50" onClick={() => { setSelected(r); setShowDetail(true) }}>Details</button>
-                      <button className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50" onClick={() => onToggleActive(r)}>{r.active ? 'Deactivate' : 'Activate'}</button>
-                      <button className="px-3 py-1.5 text-sm rounded-md border border-red-200 text-red-600 hover:bg-red-50" onClick={() => onDelete(r)}>Delete</button>
-                    </td>
+          <div className="mt-4">
+            <TableControls controls={controls} className="mb-3" />
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b">
+                    <th className="py-2 pr-4">Name</th>
+                    <th className="py-2 pr-4">Description</th>
+                    <th className="py-2 pr-4">ZIP Codes</th>
+                    <th className="py-2 pr-4">Active</th>
+                    <th className="py-2 pr-4">Actions</th>
                   </tr>
-                ))}
-                {items.length === 0 && (
-                  <tr><td className="py-4 text-gray-500" colSpan={4}>No zones</td></tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {view.map(r => (
+                    <tr key={r._id} className="border-b last:border-b-0 hover:bg-gray-50">
+                      <td className="py-2 pr-4">{r.name}</td>
+                      <td className="py-2 pr-4">{r.description || '—'}</td>
+                      <td className="py-2 pr-4">{(r.zipCodes || []).join(', ') || '—'}</td>
+                      <td className="py-2 pr-4">
+                        <span className={`px-2 py-0.5 rounded-full text-xs border ${r.active ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>{r.active ? 'Active' : 'Inactive'}</span>
+                      </td>
+                      <td className="py-2 pr-4 flex flex-wrap gap-2">
+                        <button className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50" onClick={() => { setSelected(r); setShowDetail(true) }}>Details</button>
+                        <button className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50" onClick={() => onToggleActive(r)}>{r.active ? 'Deactivate' : 'Activate'}</button>
+                        <button className="px-3 py-1.5 text-sm rounded-md border border-red-200 text-red-600 hover:bg-red-50" onClick={() => onDelete(r)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {view.length === 0 && (
+                    <tr><td className="py-4 text-gray-500" colSpan={4}>No zones</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </Card>

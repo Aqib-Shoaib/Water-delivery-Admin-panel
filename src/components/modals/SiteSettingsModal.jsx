@@ -11,8 +11,18 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
     logoUrl: initial?.logoUrl || '',
     whatsappLink: initial?.whatsappLink || '',
     whatsappPhone: initial?.whatsappPhone || '',
+    customerAppName: initial?.customerAppName || '',
+    customerAppAndroidLink: initial?.customerAppAndroidLink || '',
+    customerAppIOSLink: initial?.customerAppIOSLink || '',
+    customerAppLogoUrl: initial?.customerAppLogoUrl || '',
+    driverAppName: initial?.driverAppName || '',
+    driverAppAndroidLink: initial?.driverAppAndroidLink || '',
+    driverAppIOSLink: initial?.driverAppIOSLink || '',
+    driverAppLogoUrl: initial?.driverAppLogoUrl || '',
   })
   const [logoFile, setLogoFile] = useState(null)
+  const [customerLogoFile, setCustomerLogoFile] = useState(null)
+  const [driverLogoFile, setDriverLogoFile] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -34,6 +44,34 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
     return data.logoUrl
   }
 
+  async function uploadCustomerLogoIfNeeded() {
+    if (!customerLogoFile) return null
+    const fd = new FormData()
+    fd.append('logo', customerLogoFile)
+    const res = await fetch(`${apiBase}/api/site-settings/customer-logo`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    })
+    if (!res.ok) throw new Error(`Customer app logo upload failed (HTTP ${res.status})`)
+    const data = await res.json()
+    return data.customerAppLogoUrl
+  }
+
+  async function uploadDriverLogoIfNeeded() {
+    if (!driverLogoFile) return null
+    const fd = new FormData()
+    fd.append('logo', driverLogoFile)
+    const res = await fetch(`${apiBase}/api/site-settings/driver-logo`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    })
+    if (!res.ok) throw new Error(`Driver app logo upload failed (HTTP ${res.status})`)
+    const data = await res.json()
+    return data.driverAppLogoUrl
+  }
+
   async function onSubmit(e) {
     e.preventDefault()
     setSaving(true)
@@ -44,8 +82,47 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
         const uploaded = await uploadLogoIfNeeded()
         if (uploaded) logoUrl = uploaded
       }
-      const { siteName, contactEmail, contactPhone, address, whatsappLink, whatsappPhone } = form
-      const payload = { siteName, contactEmail, contactPhone, address, whatsappLink, whatsappPhone, logoUrl }
+      let customerAppLogoUrl = form.customerAppLogoUrl
+      if (customerLogoFile) {
+        const uploaded = await uploadCustomerLogoIfNeeded()
+        if (uploaded) customerAppLogoUrl = uploaded
+      }
+      let driverAppLogoUrl = form.driverAppLogoUrl
+      if (driverLogoFile) {
+        const uploaded = await uploadDriverLogoIfNeeded()
+        if (uploaded) driverAppLogoUrl = uploaded
+      }
+      const {
+        siteName,
+        contactEmail,
+        contactPhone,
+        address,
+        whatsappLink,
+        whatsappPhone,
+        customerAppName,
+        customerAppAndroidLink,
+        customerAppIOSLink,
+        driverAppName,
+        driverAppAndroidLink,
+        driverAppIOSLink,
+      } = form
+      const payload = {
+        siteName,
+        contactEmail,
+        contactPhone,
+        address,
+        whatsappLink,
+        whatsappPhone,
+        logoUrl,
+        customerAppName,
+        customerAppAndroidLink,
+        customerAppIOSLink,
+        customerAppLogoUrl,
+        driverAppName,
+        driverAppAndroidLink,
+        driverAppIOSLink,
+        driverAppLogoUrl,
+      }
       const res = await fetch(`${apiBase}/api/site-settings`, { method: 'PUT', headers, body: JSON.stringify(payload) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       onClose(true)
@@ -59,7 +136,7 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
       <div className="absolute inset-0 bg-black/40" onClick={() => onClose(false)} />
       <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-xl p-6">
         <h3 className="text-lg font-semibold text-primary">Edit Site Settings</h3>
-        <p className="text-sm text-gray-600 mt-1">Update site branding and contact information.</p>
+        <p className="text-sm text-gray-600 mt-1">Update site branding, contact information, and mobile app settings.</p>
         <form onSubmit={onSubmit} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Site Name</label>
@@ -95,6 +172,58 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
                 <img src={form.logoUrl} alt="Logo preview" className="h-12 object-contain" />
               </div>
             )}
+          </div>
+
+          {/* Mobile Apps - Customer App */}
+          <div className="md:col-span-2 mt-2">
+            <div className="text-sm font-semibold text-primary">Customer App</div>
+          </div>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Customer App Name</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.customerAppName} onChange={e => setForm({ ...form, customerAppName: e.target.value })} />
+          </div>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Customer App Logo</label>
+            <input type="file" accept="image/*" onChange={e => setCustomerLogoFile(e.target.files?.[0] || null)} />
+            {form.customerAppLogoUrl && (
+              <div className="mt-2">
+                <img src={form.customerAppLogoUrl} alt="Customer app logo" className="h-12 object-contain" />
+              </div>
+            )}
+          </div>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Customer App Android Link</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="Play Store URL" value={form.customerAppAndroidLink} onChange={e => setForm({ ...form, customerAppAndroidLink: e.target.value })} />
+          </div>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Customer App iOS Link</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="App Store URL" value={form.customerAppIOSLink} onChange={e => setForm({ ...form, customerAppIOSLink: e.target.value })} />
+          </div>
+
+          {/* Mobile Apps - Driver App */}
+          <div className="md:col-span-2 mt-2">
+            <div className="text-sm font-semibold text-primary">Driver App</div>
+          </div>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Driver App Name</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.driverAppName} onChange={e => setForm({ ...form, driverAppName: e.target.value })} />
+          </div>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Driver App Logo</label>
+            <input type="file" accept="image/*" onChange={e => setDriverLogoFile(e.target.files?.[0] || null)} />
+            {form.driverAppLogoUrl && (
+              <div className="mt-2">
+                <img src={form.driverAppLogoUrl} alt="Driver app logo" className="h-12 object-contain" />
+              </div>
+            )}
+          </div>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Driver App Android Link</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="Play Store URL" value={form.driverAppAndroidLink} onChange={e => setForm({ ...form, driverAppAndroidLink: e.target.value })} />
+          </div>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Driver App iOS Link</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="App Store URL" value={form.driverAppIOSLink} onChange={e => setForm({ ...form, driverAppIOSLink: e.target.value })} />
           </div>
 
           {error && <p className="md:col-span-2 text-sm text-red-600">{error}</p>}

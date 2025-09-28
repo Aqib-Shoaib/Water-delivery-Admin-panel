@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Card from '../components/ui/Card.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useNotifications } from '../context/NotificationsContext.jsx'
+import useTableControls from '../hooks/useTableControls'
+import TableControls from '../components/ui/TableControls.jsx'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
@@ -12,6 +14,7 @@ export default function Deals() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [creating, setCreating] = useState(false)
+  const { items: view, controls } = useTableControls(items, { initialPageSize: 10, searchableKeys: ['title','description'] })
   const [form, setForm] = useState({ title: '', description: '', startDate: '', endDate: '', active: true })
 
   const headers = useMemo(() => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }), [token])
@@ -110,8 +113,11 @@ export default function Deals() {
         ) : err ? (
           <div className="py-10 text-center text-red-600">{err}</div>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
+          <div className="mt-4">
+            <>
+              <TableControls controls={controls} className="mb-3" />
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left border-b">
                   <th className="py-2 pr-4">Title</th>
@@ -123,7 +129,7 @@ export default function Deals() {
                 </tr>
               </thead>
               <tbody>
-                {items.map(d => (
+                {view.map(d => (
                   <tr key={d._id} className="border-b last:border-b-0 hover:bg-gray-50">
                     <td className="py-2 pr-4">{d.title}</td>
                     <td className="py-2 pr-4">{d.description || '—'}</td>
@@ -138,11 +144,13 @@ export default function Deals() {
                     </td>
                   </tr>
                 ))}
-                {items.length === 0 && (
+                {view.length === 0 && (
                   <tr><td className="py-4 text-gray-500" colSpan={6}>No deals</td></tr>
                 )}
               </tbody>
-            </table>
+                </table>
+              </div>
+            </>
           </div>
         )}
       </Card>

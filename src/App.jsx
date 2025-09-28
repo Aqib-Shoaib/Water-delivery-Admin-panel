@@ -9,8 +9,10 @@ import Customers from './pages/Customers.jsx'
 import Settings from './pages/Settings.jsx'
 import Deals from './pages/Deals.jsx'
 import Reminders from './pages/Reminders.jsx'
+import HealthReminders from './pages/HealthReminders.jsx'
 import Login from './pages/Login.jsx'
 import Users from './pages/Users.jsx'
+import Profile from './pages/Profile.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import AdminLayout from './components/layout/AdminLayout.jsx'
 
@@ -48,8 +50,10 @@ function App() {
         <Route path="/customers" element={<RequireAdmin><AdminLayout><Customers /></AdminLayout></RequireAdmin>} />
         <Route path="/regions" element={<RequireAdmin><AdminLayout><Regions /></AdminLayout></RequireAdmin>} />
         <Route path="/settings" element={<RequireAdmin><AdminLayout><Settings /></AdminLayout></RequireAdmin>} />
+        <Route path="/profile" element={<RequireAdmin><AdminLayout><Profile /></AdminLayout></RequireAdmin>} />
         <Route path="/deals" element={<RequireAdmin><AdminLayout><Deals /></AdminLayout></RequireAdmin>} />
         <Route path="/reminders" element={<RequireAdmin><AdminLayout><Reminders /></AdminLayout></RequireAdmin>} />
+        <Route path="/health-reminders" element={<RequireAdmin><AdminLayout><HealthReminders /></AdminLayout></RequireAdmin>} />
       </Routes>
     </BrowserRouter>
   )
