@@ -4,6 +4,7 @@ import Button from '../components/ui/Button.jsx'
 import Input from '../components/ui/Input.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import AddUserModal from '../components/modals/AddUserModal.jsx'
+import EditUserModal from '../components/modals/EditUserModal.jsx'
 import useTableControls from '../hooks/useTableControls'
 import TableControls from '../components/ui/TableControls.jsx'
 
@@ -16,6 +17,8 @@ export default function Users() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
+  const [selected, setSelected] = useState(null)
   const { items: view, controls } = useTableControls(items, { initialPageSize: 10, searchableKeys: ['name','email','role','cnic'] })
 
   const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token])
@@ -39,6 +42,7 @@ export default function Users() {
   }, [])
 
   const onCreated = async () => { await load() }
+  const onSaved = async () => { await load() }
 
   const onDelete = async (id) => {
     if (!confirm('Delete this user?')) return
@@ -92,6 +96,7 @@ export default function Users() {
                   <th className="py-2 pr-4">Email</th>
                   <th className="py-2 pr-4">CNIC</th>
                   <th className="py-2 pr-4">Role</th>
+                  <th className="py-2 pr-4">Role Name</th>
                   <th className="py-2 pr-4">Permissions</th>
                   <th className="py-2 pr-4">Actions</th>
                 </tr>
@@ -108,8 +113,13 @@ export default function Users() {
                     <td className="py-2 pr-4">{u.email}</td>
                     <td className="py-2 pr-4">{u.cnic || '—'}</td>
                     <td className="py-2 pr-4"><span className={roleBadgeCls(u.role)}>{u.role}</span></td>
+                    <td className="py-2 pr-4">{u.roleName || '—'}</td>
                     <td className="py-2 pr-4">{(u.permissions || []).join(', ')}</td>
                     <td className="py-2 pr-4">
+                      <button
+                        className="mr-2 px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                        onClick={() => { setSelected(u); setShowEdit(true) }}
+                      >Edit</button>
                       <button
                         className={`px-3 py-1.5 text-sm rounded-md border ${isSelf(u) ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-red-200 text-red-600 hover:bg-red-50'}`}
                         onClick={() => !isSelf(u) && onDelete(u._id)}
@@ -132,6 +142,7 @@ export default function Users() {
       </Card>
 
       <AddUserModal open={showAdd} onClose={() => setShowAdd(false)} onCreated={onCreated} apiBase={API_BASE} />
+      <EditUserModal open={showEdit} onClose={() => { setShowEdit(false); setSelected(null) }} onSaved={onSaved} apiBase={API_BASE} user={selected} />
     </div>
   )
 }

@@ -13,6 +13,8 @@ import HealthReminders from './pages/HealthReminders.jsx'
 import Login from './pages/Login.jsx'
 import Users from './pages/Users.jsx'
 import Profile from './pages/Profile.jsx'
+import AuditLogs from './pages/AuditLogs.jsx'
+import Invoices from './pages/Invoices.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import AdminLayout from './components/layout/AdminLayout.jsx'
 
@@ -54,6 +56,8 @@ function App() {
         <Route path="/deals" element={<RequireAdmin><AdminLayout><Deals /></AdminLayout></RequireAdmin>} />
         <Route path="/reminders" element={<RequireAdmin><AdminLayout><Reminders /></AdminLayout></RequireAdmin>} />
         <Route path="/health-reminders" element={<RequireAdmin><AdminLayout><HealthReminders /></AdminLayout></RequireAdmin>} />
+        <Route path="/audit-logs" element={<RequireAdmin><AdminLayout><AuditLogs /></AdminLayout></RequireAdmin>} />
+        <Route path="/invoices" element={<RequireAdmin><AdminLayout><Invoices /></AdminLayout></RequireAdmin>} />
       </Routes>
     </BrowserRouter>
   )
