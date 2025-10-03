@@ -7,7 +7,7 @@ import NotificationsContainer from '../ui/NotificationsContainer.jsx'
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
 function Sidebar({ open, onClose, settings }) {
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
   const navCls = ({ isActive }) =>
     `nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
       isActive ? 'bg-light-blue text-primary border-r-4 border-medium-blue' : 'text-gray-600 hover:bg-blue-50'
@@ -16,7 +16,7 @@ function Sidebar({ open, onClose, settings }) {
   const initials = (user?.email || 'AD').slice(0, 2).toUpperCase()
 
   return (
-    <div className={`w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-40 ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 relative`}>
+    <div className={`w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-40 fixed inset-y-0 left-0 md:static ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:h-screen overflow-y-auto`}>
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center space-x-3">
@@ -38,7 +38,7 @@ function Sidebar({ open, onClose, settings }) {
       </div>
 
       {/* Navigation */}
-      <nav className="p-4 space-y-2">
+      <nav className="p-4 space-y-2 pb-10">
         <NavLink to="/" end className={navCls}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
@@ -53,31 +53,69 @@ function Sidebar({ open, onClose, settings }) {
           <span>Users</span>
           <div className="notification-dot" />
         </NavLink>
-        <NavLink to="/products" className={navCls}>
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
-          <span>Products</span>
-        </NavLink>
         <NavLink to="/orders" className={navCls}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
           <span>Orders</span>
         </NavLink>
-        <NavLink to="/drivers" className={navCls}>
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-          </svg>
-          <span>Drivers</span>
-        </NavLink>
-        <NavLink to="/customers" className={navCls}>
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5V8H2v12h5m10 0V8m0 12H7m0 0v-2a3 3 0 013-3h4a3 3 0 013 3v2" />
-          </svg>
-          <span>Customers</span>
-        </NavLink>
-        <NavLink to="/regions" className={navCls}>
+        {hasPermission && hasPermission('assets:read') && (
+          <NavLink to="/assets" className={navCls}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7l9-4 9 4-9 4-9-4m0 6l9 4 9-4" />
+            </svg>
+            <span>Asset Management</span>
+          </NavLink>
+        )}
+        {hasPermission && hasPermission('analytics:read') && (
+          <NavLink to="/history" className={navCls}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 3v10H3m8 0l4 4 8-8" />
+            </svg>
+            <span>History</span>
+          </NavLink>
+        )}
+        {hasPermission && hasPermission('settings:write') && (
+          <NavLink to="/about" className={navCls}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+            </svg>
+            <span>About</span>
+          </NavLink>
+        )}
+        {hasPermission && hasPermission('settings:write') && (
+          <NavLink to="/contact" className={navCls}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 8a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v3z" />
+            </svg>
+            <span>Contact</span>
+          </NavLink>
+        )}
+        {hasPermission && hasPermission('users:write') && (
+          <NavLink to="/invite" className={navCls}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v5m0 0v5m0-5h5m-5 0H7" />
+            </svg>
+            <span>Invite</span>
+          </NavLink>
+        )}
+        {false && (
+          <NavLink to="/drivers" className={navCls}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+            <span>Drivers</span>
+          </NavLink>
+        )}
+        {false && (
+          <NavLink to="/customers" className={navCls}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5V8H2v12h5m10 0V8m0 12H7m0 0v-2a3 3 0 013-3h4a3 3 0 013 3v2" />
+            </svg>
+            <span>Customers</span>
+          </NavLink>
+        )}
+        <NavLink to="/zones" className={navCls}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7l9-4 9 4-9 4-9-4zm0 6l9 4 9-4" />
           </svg>
@@ -103,28 +141,7 @@ function Sidebar({ open, onClose, settings }) {
         </NavLink>
       </nav>
 
-      {/* User Profile */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100">
-        <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
-          <div className="w-10 h-10 bg-medium-blue rounded-full flex items-center justify-center text-white font-medium">
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-primary truncate">{user?.email || 'Admin'}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.role || 'Administrator'}</p>
-          </div>
-          <button className="text-gray-400 hover:text-gray-600" onClick={onClose}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Watermark Logo */}
-      {settings?.logoUrl && (
-        <img src={settings.logoUrl} alt="Logo watermark" className="pointer-events-none select-none opacity-10 absolute bottom-24 left-1/2 -translate-x-1/2 w-40" />
-      )}
+      {/* Removed bottom user card and watermark to allow full-height scrolling */}
     </div>
   )
 }
@@ -330,6 +347,54 @@ function Topbar({ onMenu, onRequestLogout, settings }) {
               </div>
             )}
           </div>
+
+          {/* Products shortcut */}
+          <NavLink
+            to="/products"
+            className={({isActive}) => `inline-flex items-center space-x-2 px-3 py-2 text-sm rounded-md border ${isActive ? 'border-medium-blue text-primary' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            title="Products"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <span>Products</span>
+          </NavLink>
+
+          {/* Docs & Forms */}
+          <NavLink
+            to="/docs"
+            className={({isActive}) => `inline-flex items-center space-x-2 px-3 py-2 text-sm rounded-md border ${isActive ? 'border-medium-blue text-primary' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            title="Docs & Forms"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6M7 8h10M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+            </svg>
+            <span>Docs & Forms</span>
+          </NavLink>
+
+          {/* Offers & Deals button */}
+          <NavLink
+            to="/deals"
+            className={({isActive}) => `inline-flex items-center space-x-2 px-3 py-2 text-sm rounded-md border ${isActive ? 'border-medium-blue text-primary' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            title="Offers & Deals"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <span>Offers & Deals</span>
+          </NavLink>
+
+          {/* Reminders button */}
+          <NavLink
+            to="/reminders"
+            className={({isActive}) => `inline-flex items-center space-x-2 px-3 py-2 text-sm rounded-md border ${isActive ? 'border-medium-blue text-primary' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            title="Reminders"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3M12 22a10 10 0 110-20 10 10 0 010 20z" />
+            </svg>
+            <span>Reminders</span>
+          </NavLink>
 
           {/* Notifications */}
           <div className="relative">

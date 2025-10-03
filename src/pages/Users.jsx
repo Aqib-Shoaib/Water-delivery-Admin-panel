@@ -89,51 +89,73 @@ export default function Users() {
             <>
               <TableControls controls={controls} className="mb-3" />
               <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="py-2 pr-4">Name</th>
-                  <th className="py-2 pr-4">Email</th>
-                  <th className="py-2 pr-4">CNIC</th>
-                  <th className="py-2 pr-4">Role</th>
-                  <th className="py-2 pr-4">Role Name</th>
-                  <th className="py-2 pr-4">Permissions</th>
-                  <th className="py-2 pr-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {view.map(u => (
-                  <tr key={u._id} className="border-b last:border-b-0 hover:bg-gray-50">
-                    <td className="py-2 pr-4">
-                      <div className="flex items-center gap-2">
-                        <span>{u.name}</span>
-                        {isSelf(u) && <span className="bg-light-blue text-primary border border-medium-blue px-2 py-0.5 rounded-full text-xs">You</span>}
-                      </div>
-                    </td>
-                    <td className="py-2 pr-4">{u.email}</td>
-                    <td className="py-2 pr-4">{u.cnic || '—'}</td>
-                    <td className="py-2 pr-4"><span className={roleBadgeCls(u.role)}>{u.role}</span></td>
-                    <td className="py-2 pr-4">{u.roleName || '—'}</td>
-                    <td className="py-2 pr-4">{(u.permissions || []).join(', ')}</td>
-                    <td className="py-2 pr-4">
-                      <button
-                        className="mr-2 px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
-                        onClick={() => { setSelected(u); setShowEdit(true) }}
-                      >Edit</button>
-                      <button
-                        className={`px-3 py-1.5 text-sm rounded-md border ${isSelf(u) ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-red-200 text-red-600 hover:bg-red-50'}`}
-                        onClick={() => !isSelf(u) && onDelete(u._id)}
-                        disabled={isSelf(u)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {view.length === 0 && (
-                  <tr><td className="py-4 text-gray-500" colSpan={5}>No users</td></tr>
-                )}
-              </tbody>
+                <table className="min-w-full text-xs md:text-sm">
+                  <thead>
+                    <tr className="text-left border-b">
+                      <th className="py-2 pr-4">Empl. Name</th>
+                      <th className="py-2 pr-4">Sur Name</th>
+                      <th className="py-2 pr-4">Empl. ID</th>
+                      <th className="py-2 pr-4">D.O.B.</th>
+                      <th className="py-2 pr-4">CNIC/Passport</th>
+                      <th className="py-2 pr-4">Mobile No.</th>
+                      <th className="py-2 pr-4">Email ID</th>
+                      <th className="py-2 pr-4">Job Title</th>
+                      <th className="py-2 pr-4">Gender</th>
+                      <th className="py-2 pr-4">Joining Date</th>
+                      <th className="py-2 pr-4">Designation</th>
+                      <th className="py-2 pr-4">Resi. Address</th>
+                      <th className="py-2 pr-4">Duties / Assigned Role</th>
+                      <th className="py-2 pr-4">Company Mobile No.</th>
+                      <th className="py-2 pr-4">Company Email ID</th>
+                      <th className="py-2 pr-4">Company Other Belongings</th>
+                      <th className="py-2 pr-4">Remarks</th>
+                      <th className="py-2 pr-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {view.map(u => (
+                      <tr key={u._id} className="border-b last:border-b-0 hover:bg-gray-50 align-top">
+                        <td className="py-2 pr-4">
+                          <div className="flex items-center gap-2">
+                            <span>{u.firstName || (u.name?.split(' ')[0] || '—')}</span>
+                            {isSelf(u) && <span className="bg-light-blue text-primary border border-medium-blue px-2 py-0.5 rounded-full text-[10px]">You</span>}
+                          </div>
+                        </td>
+                        <td className="py-2 pr-4">{u.lastName || (u.name?.split(' ').slice(1).join(' ') || '—')}</td>
+                        <td className="py-2 pr-4">{u.employeeId || '—'}</td>
+                        <td className="py-2 pr-4">{u.dob ? new Date(u.dob).toLocaleDateString() : '—'}</td>
+                        <td className="py-2 pr-4">{u.cnicOrPassport || u.cnic || '—'}</td>
+                        <td className="py-2 pr-4">{u.phone || '—'}</td>
+                        <td className="py-2 pr-4">{u.email}</td>
+                        <td className="py-2 pr-4">{u.jobTitle || '—'}</td>
+                        <td className="py-2 pr-4">{u.gender || '—'}</td>
+                        <td className="py-2 pr-4">{u.joiningDate ? new Date(u.joiningDate).toLocaleDateString() : '—'}</td>
+                        <td className="py-2 pr-4">{u.designation || '—'}</td>
+                        <td className="py-2 pr-4 max-w-xs truncate" title={u.address || ''}>{u.address || '—'}</td>
+                        <td className="py-2 pr-4 max-w-xs truncate" title={u.duties || u.roleName || u.role}>{u.duties || u.roleName || u.role}</td>
+                        <td className="py-2 pr-4">{u.companyPhone || '—'}</td>
+                        <td className="py-2 pr-4">{u.companyEmail || '—'}</td>
+                        <td className="py-2 pr-4 max-w-xs truncate" title={u.companyBelongings || ''}>{u.companyBelongings || '—'}</td>
+                        <td className="py-2 pr-4 max-w-xs truncate" title={u.remarks || ''}>{u.remarks || '—'}</td>
+                        <td className="py-2 pr-4 whitespace-nowrap">
+                          <button
+                            className="mr-2 px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                            onClick={() => { setSelected(u); setShowEdit(true) }}
+                          >Edit</button>
+                          <button
+                            className={`px-3 py-1.5 text-sm rounded-md border ${isSelf(u) ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-red-200 text-red-600 hover:bg-red-50'}`}
+                            onClick={() => !isSelf(u) && onDelete(u._id)}
+                            disabled={isSelf(u)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {view.length === 0 && (
+                      <tr><td className="py-4 text-gray-500" colSpan={18}>No users</td></tr>
+                    )}
+                  </tbody>
                 </table>
               </div>
             </>

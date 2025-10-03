@@ -5,10 +5,11 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
 export default function EditUserModal({ open, onClose, onSaved, apiBase, user }) {
   const { token } = useAuth()
-  const [form, setForm] = useState({ name: '', email: '', role: 'customer', roleName: '', phone: '', cnic: '', permissions: [], region: '' })
+  const [form, setForm] = useState({ name: '', email: '', role: 'customer', roleName: '', phone: '', cnic: '', permissions: [],
+    firstName: '', lastName: '', employeeId: '', dob: '', cnicOrPassport: '', jobTitle: '', gender: '', joiningDate: '', designation: '', address: '', duties: '', companyPhone: '', companyEmail: '', companyBelongings: '', remarks: ''
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [regions, setRegions] = useState([])
   const [availablePerms, setAvailablePerms] = useState([])
   const [availableRoles, setAvailableRoles] = useState(['admin','customer','driver'])
   const [selectAll, setSelectAll] = useState(false)
@@ -26,19 +27,25 @@ export default function EditUserModal({ open, onClose, onSaved, apiBase, user })
       phone: user?.phone || '',
       cnic: user?.cnic || '',
       permissions: Array.isArray(user?.permissions) ? user.permissions : [],
-      region: user?.region?._id || user?.region || ''
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      employeeId: user?.employeeId || '',
+      dob: user?.dob ? new Date(user.dob).toISOString().slice(0,10) : '',
+      cnicOrPassport: user?.cnicOrPassport || '',
+      jobTitle: user?.jobTitle || '',
+      gender: user?.gender || '',
+      joiningDate: user?.joiningDate ? new Date(user.joiningDate).toISOString().slice(0,10) : '',
+      designation: user?.designation || '',
+      address: user?.address || '',
+      duties: user?.duties || '',
+      companyPhone: user?.companyPhone || '',
+      companyEmail: user?.companyEmail || '',
+      companyBelongings: user?.companyBelongings || '',
+      remarks: user?.remarks || '',
     })
   }, [open, user])
 
   useEffect(() => {
-    async function loadRegions() {
-      try {
-        const res = await fetch(`${apiBase}/api/regions`, { headers })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data = await res.json()
-        setRegions(data)
-      } catch { /* ignore */ }
-    }
     async function loadPermissions() {
       try {
         const res = await fetch(`${apiBase || API_BASE}/api/permissions`, { headers })
@@ -49,7 +56,7 @@ export default function EditUserModal({ open, onClose, onSaved, apiBase, user })
         }
       } catch { /* ignore */ }
     }
-    if (open) { loadRegions(); loadPermissions(); }
+    if (open) { loadPermissions(); }
   }, [open])
 
   if (!open) return null
@@ -65,8 +72,22 @@ export default function EditUserModal({ open, onClose, onSaved, apiBase, user })
         role: form.role,
         roleName: form.roleName.trim() || undefined,
         permissions: Array.isArray(form.permissions) ? form.permissions : [],
-        region: form.region || undefined,
         cnic: form.cnic?.trim?.() || undefined,
+        firstName: form.firstName.trim() || undefined,
+        lastName: form.lastName.trim() || undefined,
+        employeeId: form.employeeId.trim() || undefined,
+        dob: form.dob || undefined,
+        cnicOrPassport: form.cnicOrPassport.trim() || undefined,
+        jobTitle: form.jobTitle.trim() || undefined,
+        gender: form.gender || undefined,
+        joiningDate: form.joiningDate || undefined,
+        designation: form.designation.trim() || undefined,
+        address: form.address.trim() || undefined,
+        duties: form.duties.trim() || undefined,
+        companyPhone: form.companyPhone.trim() || undefined,
+        companyEmail: form.companyEmail.trim() || undefined,
+        companyBelongings: form.companyBelongings.trim() || undefined,
+        remarks: form.remarks.trim() || undefined,
       }
       const res = await fetch(`${apiBase}/api/admin/users/${user._id}`, { method: 'PUT', headers, body: JSON.stringify(payload) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -96,6 +117,14 @@ export default function EditUserModal({ open, onClose, onSaved, apiBase, user })
             <input disabled className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-gray-100" value={form.email} readOnly />
           </div>
           <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">First Name</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Last Name</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
+          </div>
+          <div className="sm:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Phone</label>
             <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
           </div>
@@ -110,11 +139,65 @@ export default function EditUserModal({ open, onClose, onSaved, apiBase, user })
             <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="e.g. Inventory Manager" value={form.roleName} onChange={e => setForm({ ...form, roleName: e.target.value })} />
           </div>
           <div className="sm:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Region</label>
-            <select className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.region} onChange={e => setForm({ ...form, region: e.target.value })}>
-              <option value="">— None —</option>
-              {regions.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
+            <label className="block text-sm font-medium text-primary mb-1">Employee ID</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.employeeId} onChange={e => setForm({ ...form, employeeId: e.target.value })} />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">D.O.B.</label>
+            <input type="date" className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.dob} onChange={e => setForm({ ...form, dob: e.target.value })} />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">CNIC</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.cnic} onChange={e => setForm({ ...form, cnic: e.target.value })} />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">CNIC/Passport</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.cnicOrPassport} onChange={e => setForm({ ...form, cnicOrPassport: e.target.value })} />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Job Title</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.jobTitle} onChange={e => setForm({ ...form, jobTitle: e.target.value })} />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Gender</label>
+            <select className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })}>
+              <option value="">—</option>
+              <option value="male">male</option>
+              <option value="female">female</option>
+              <option value="other">other</option>
             </select>
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Joining Date</label>
+            <input type="date" className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.joiningDate} onChange={e => setForm({ ...form, joiningDate: e.target.value })} />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Designation</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.designation} onChange={e => setForm({ ...form, designation: e.target.value })} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-primary mb-1">Resi. Address</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-primary mb-1">Duties / Assigned Role</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.duties} onChange={e => setForm({ ...form, duties: e.target.value })} />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Company Mobile No.</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.companyPhone} onChange={e => setForm({ ...form, companyPhone: e.target.value })} />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-primary mb-1">Company Email ID</label>
+            <input type="email" className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.companyEmail} onChange={e => setForm({ ...form, companyEmail: e.target.value })} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-primary mb-1">Company Other Belongings</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.companyBelongings} onChange={e => setForm({ ...form, companyBelongings: e.target.value })} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-primary mb-1">Remarks</label>
+            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} />
           </div>
           <div className="sm:col-span-2">
             <div className="flex items-center justify-between">

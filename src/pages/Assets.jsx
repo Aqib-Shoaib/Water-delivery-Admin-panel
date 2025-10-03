@@ -1,0 +1,224 @@
+import React, { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../context/AuthContext.jsx'
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+
+function Modal({ title, children, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative w-full max-w-3xl bg-white rounded-xl shadow-xl p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-semibold text-primary">{title}</h3>
+          <button onClick={onClose} className="px-2 py-1 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Close</button>
+        </div>
+        <div>{children}</div>
+      </div>
+    </div>
+  )
+}
+
+function Donut({ value = 0, label = '' }) {
+  return (
+    <div className="p-3 border rounded-md bg-white flex items-center gap-3">
+      <div className="w-12 h-12 rounded-full grid place-items-center border-4 border-blue-100 text-base font-semibold text-primary">
+        {Number(value || 0).toLocaleString()}
+      </div>
+      <div className="text-xs text-gray-600">{label}</div>
+    </div>
+  )}
+
+export default function Assets() {
+  const { token } = useAuth()
+  const headers = useMemo(() => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }), [token])
+
+  const [loading, setLoading] = useState(false)
+  const [summary, setSummary] = useState({
+    inboundEmpty: 0,
+    outboundEmpty: 0,
+    inhandEmpty: 0,
+    damagedEmpty: 0,
+    inboundDisp: 0,
+    outboundDisp: 0,
+    inhandDisp: 0,
+    damagedDisp: 0,
+    availableProducts: 0,
+    upcomingProducts: 0,
+    vendorsCount: 0,
+  })
+  const [rows, setRows] = useState([])
+  const [filters, setFilters] = useState({ type: '', condition: '', vendor: '' })
+  const [openDetail, setOpenDetail] = useState(false)
+  const [detailRow, setDetailRow] = useState(null)
+
+  async function loadSummary() {
+    try {
+      const res = await fetch(`${API_BASE}/api/assets/summary`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setSummary(s => ({ ...s, ...data }))
+      }
+    } catch {}
+  }
+  async function loadStock() {
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/assets/stock`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setRows(Array.isArray(data) ? data : [])
+      } else setRows([])
+    } catch {
+      setRows([])
+    } finally { setLoading(false) }
+  }
+
+  useEffect(() => {
+    if (!token) return
+    loadSummary()
+    loadStock()
+  }, [token])
+
+  function showDetail(r) { setDetailRow(r); setOpenDetail(true) }
+
+  const filteredRows = useMemo(() => {
+    return rows.filter(r => {
+      if (filters.type && String(r.itemType||'').toLowerCase() !== String(filters.type).toLowerCase()) return false
+      if (filters.condition && String(r.itemCondition||'').toLowerCase() !== String(filters.condition).toLowerCase()) return false
+      if (filters.vendor && String(r.vendorName||'').toLowerCase() !== String(filters.vendor).toLowerCase()) return false
+      return true
+    })
+  }, [rows, filters])
+
+  function downloadCSV() {
+    const header = ['Item Name','Item Code','QTY','Item Type','Item Condition','Allot To (Depart)','Approved By','Vendor Name']
+    const lines = filteredRows.map(r => [
+      r.itemName||'', r.itemCode||'', r.qty??'', r.itemType||'', r.itemCondition||'', r.allotToDepartment||'', r.approvedBy||'', r.vendorName||''
+    ].map(v => `"${String(v).replaceAll('"','""')}"`).join(','))
+    const csv = [header.join(','), ...lines].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'assets.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-lg font-semibold text-primary">Asset Management</h2>
+          <p className="text-sm text-gray-600">Overview of stock and assets.</p>
+        </div>
+      </div>
+
+      {/* Donut charts */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <Donut value={summary.inboundEmpty} label="In-bound Stock (Empty Bottles)" />
+        <Donut value={summary.outboundEmpty} label="Out-bound Stock (Empty Bottles)" />
+        <Donut value={summary.inhandEmpty} label="Total In-hand (Empty Bottles)" />
+        <Donut value={summary.damagedEmpty} label="Total Damaged Bottles" />
+        <Donut value={summary.inboundDisp} label="Total In-bound Dispenser" />
+        <Donut value={summary.outboundDisp} label="Total Out-bound Dispenser" />
+        <Donut value={summary.inhandDisp} label="In-hand Stock (Dispenser)" />
+        <Donut value={summary.damagedDisp} label="Total Damaged Dispenser" />
+        <Donut value={summary.availableProducts} label="Available Products" />
+        <Donut value={summary.upcomingProducts} label="Upcoming Products" />
+        <Donut value={summary.vendorsCount} label="Number of Vendors" />
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="text-sm">
+          <div className="text-primary mb-1">Item Type</div>
+          <input className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" placeholder="e.g. bottle, dispenser" value={filters.type} onChange={e=>setFilters(s=>({...s,type:e.target.value}))} />
+        </label>
+        <label className="text-sm">
+          <div className="text-primary mb-1">Condition</div>
+          <input className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" placeholder="e.g. new, used, damaged" value={filters.condition} onChange={e=>setFilters(s=>({...s,condition:e.target.value}))} />
+        </label>
+        <label className="text-sm">
+          <div className="text-primary mb-1">Vendor</div>
+          <input className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" placeholder="Vendor name" value={filters.vendor} onChange={e=>setFilters(s=>({...s,vendor:e.target.value}))} />
+        </label>
+        <div className="ml-auto flex gap-2">
+          <button onClick={()=>setFilters({ type:'', condition:'', vendor:'' })} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Reset</button>
+          <button onClick={downloadCSV} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Download CSV</button>
+        </div>
+      </div>
+
+      {/* Stock details table */}
+      <div className="overflow-x-auto border rounded-md bg-white">
+        {loading ? (
+          <div className="p-3 text-sm text-gray-500">Loading...</div>
+        ) : (
+          <table className="min-w-full text-xs">
+            <thead>
+              <tr className="border-b bg-gray-50">
+                <th className="py-2 px-2 text-left">Item Name</th>
+                <th className="py-2 px-2 text-left">Item Code</th>
+                <th className="py-2 px-2 text-left">QTY</th>
+                <th className="py-2 px-2 text-left">Item Type</th>
+                <th className="py-2 px-2 text-left">Item Condition</th>
+                <th className="py-2 px-2 text-left">Allot To (Depart)</th>
+                <th className="py-2 px-2 text-left">Approved By</th>
+                <th className="py-2 px-2 text-left">Vendor Name</th>
+                <th className="py-2 px-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRows.map((r, idx) => (
+                <tr key={r._id || idx} className="border-b">
+                  <td className="py-2 px-2">{r.itemName || '—'}</td>
+                  <td className="py-2 px-2">{r.itemCode || '—'}</td>
+                  <td className="py-2 px-2">{r.qty != null ? r.qty : '—'}</td>
+                  <td className="py-2 px-2">{r.itemType || '—'}</td>
+                  <td className="py-2 px-2">{r.itemCondition || '—'}</td>
+                  <td className="py-2 px-2">{r.allotToDepartment || '—'}</td>
+                  <td className="py-2 px-2">{r.approvedBy || '—'}</td>
+                  <td className="py-2 px-2">{r.vendorName || '—'}</td>
+                  <td className="py-2 px-2"><button className="text-primary underline" onClick={() => showDetail(r)}>Details</button></td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td className="py-3 px-2 text-gray-500" colSpan={9}>No items</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {openDetail && detailRow && (
+        <Modal title="Asset Details" onClose={() => setOpenDetail(false)}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <Detail label="Item Name" value={detailRow.itemName} />
+            <Detail label="Item Code" value={detailRow.itemCode} />
+            <Detail label="QTY" value={detailRow.qty} />
+            <Detail label="Item Type" value={detailRow.itemType} />
+            <Detail label="Item Condition" value={detailRow.itemCondition} />
+            <Detail label="Allot To (Department)" value={detailRow.allotToDepartment} />
+            <Detail label="Approved By" value={detailRow.approvedBy} />
+            <Detail label="Designation" value={detailRow.designation} />
+            <Detail label="Contact Details" value={detailRow.contactDetails} />
+            <Detail label="Vendor Name" value={detailRow.vendorName} />
+            <Detail label="Vendor Mobile" value={detailRow.vendorMobile} />
+            <Detail label="Vendor Address" value={detailRow.vendorAddress} />
+            <Detail label="Vendor Company" value={detailRow.vendorCompany} />
+            <Detail label="Remarks" value={detailRow.remarks} />
+          </div>
+        </Modal>
+      )}
+    </div>
+  )
+}
+
+function Detail({ label, value }) {
+  return (
+    <div>
+      <div className="text-[11px] text-gray-500 mb-1">{label}</div>
+      <div className="text-sm text-gray-900">{value ?? '—'}</div>
+    </div>
+  )
+}

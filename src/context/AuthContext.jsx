@@ -31,7 +31,17 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user')
   }
 
-  const value = useMemo(() => ({ token, user, login, logout, isAuthed: !!token }), [token, user])
+  const hasRole = (role) => {
+    const r = (user?.role || '').toLowerCase()
+    return r === role.toLowerCase()
+  }
+  const hasPermission = (perm) => {
+    if (hasRole('admin')) return true
+    const perms = Array.isArray(user?.permissions) ? user.permissions : []
+    return perms.map(p => String(p).toLowerCase()).includes(String(perm).toLowerCase())
+  }
+
+  const value = useMemo(() => ({ token, user, login, logout, isAuthed: !!token, hasRole, hasPermission }), [token, user])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
