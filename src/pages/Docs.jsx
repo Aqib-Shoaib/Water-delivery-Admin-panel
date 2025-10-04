@@ -10,6 +10,10 @@ export default function Docs() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ id: null, title: '', url: '', kind: 'doc' })
+  const [inputMode, setInputMode] = useState('link') // 'link' | 'file'
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const [uploadedFileName, setUploadedFileName] = useState('')
   const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
@@ -38,6 +42,10 @@ export default function Docs() {
 
   function resetForm() {
     setForm({ id: null, title: '', url: '', kind: 'doc' })
+    setInputMode('link')
+    setUploading(false)
+    setUploadError('')
+    setUploadedFileName('')
   }
 
   async function onSubmit(e) {
@@ -56,6 +64,31 @@ export default function Docs() {
       await load()
       resetForm()
     } catch (e) { alert(e.message) } finally { setSaving(false) }
+  }
+
+  async function onFileSelected(e) {
+    const file = e.target.files && e.target.files[0]
+    if (!file) return
+    setUploadError('')
+    setUploading(true)
+    setUploadedFileName('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch(`${API_BASE}/api/uploads`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      })
+      if (!res.ok) throw new Error(`Upload failed (HTTP ${res.status})`)
+      const data = await res.json()
+      setForm(f => ({ ...f, url: data.url }))
+      setUploadedFileName(file.name)
+    } catch (err) {
+      setUploadError(err.message || 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
   }
 
   function onEdit(item) {
@@ -99,13 +132,52 @@ export default function Docs() {
           />
         </div>
         <div className="md:col-span-5">
-          <label className="text-sm text-gray-600">URL</label>
-          <input
-            className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-blue focus:border-transparent"
-            value={form.url}
-            onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
-            placeholder="https://... (Google Drive, PDF, Sheet, etc.)"
-          />
+          <label className="text-sm text-gray-600">Source</label>
+          <div className="mt-1 flex items-center gap-4 text-sm">
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="radio"
+                name="inputMode"
+                className="accent-medium-blue"
+                checked={inputMode === 'link'}
+                onChange={() => setInputMode('link')}
+              />
+              <span>Provide URL</span>
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="radio"
+                name="inputMode"
+                className="accent-medium-blue"
+                checked={inputMode === 'file'}
+                onChange={() => setInputMode('file')}
+              />
+              <span>Upload File</span>
+            </label>
+          </div>
+          {inputMode === 'link' && (
+            <input
+              className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-blue focus:border-transparent"
+              value={form.url}
+              onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
+              placeholder="https://... (Google Drive, PDF, Sheet, etc.)"
+            />
+          )}
+          {inputMode === 'file' && (
+            <div className="mt-2">
+              <input
+                type="file"
+                className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-medium-blue file:text-white hover:file:bg-blue-700"
+                onChange={onFileSelected}
+                disabled={uploading}
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,image/*"
+              />
+              <div className="mt-1 text-xs text-gray-500">
+                {uploading ? 'Uploading...' : uploadedFileName ? `Uploaded: ${uploadedFileName}` : form.url ? 'File uploaded' : 'Choose a file to upload'}
+              </div>
+              {uploadError && <div className="mt-1 text-xs text-red-600">{uploadError}</div>}
+            </div>
+          )}
         </div>
         <div className="md:col-span-2">
           <label className="text-sm text-gray-600">Type</label>
@@ -124,7 +196,7 @@ export default function Docs() {
           <button
             type="submit"
             className="w-full px-3 py-2 rounded-md bg-medium-blue text-white hover:bg-blue-700 disabled:opacity-60"
-            disabled={saving}
+            disabled={saving || (inputMode === 'file' && (uploading || !form.url))}
           >
             {saving ? (form.id ? 'Updating...' : 'Adding...') : (form.id ? 'Update' : 'Add')}
           </button>

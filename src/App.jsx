@@ -6,7 +6,6 @@ import Orders from './pages/Orders.jsx'
 import Drivers from './pages/Drivers.jsx'
 import Customers from './pages/Customers.jsx'
 import Settings from './pages/Settings.jsx'
-import Deals from './pages/Deals.jsx'
 import Reminders from './pages/Reminders.jsx'
 import HealthReminders from './pages/HealthReminders.jsx'
 import Login from './pages/Login.jsx'
@@ -63,7 +62,6 @@ function App() {
         <Route path="/customers" element={<RequireAdmin><AdminLayout><Customers /></AdminLayout></RequireAdmin>} />
         <Route path="/settings" element={<RequireAdmin><AdminLayout><Settings /></AdminLayout></RequireAdmin>} />
         <Route path="/profile" element={<RequireAdmin><AdminLayout><Profile /></AdminLayout></RequireAdmin>} />
-        <Route path="/deals" element={<RequireAdmin><AdminLayout><Deals /></AdminLayout></RequireAdmin>} />
         <Route path="/reminders" element={<RequireAdmin><AdminLayout><Reminders /></AdminLayout></RequireAdmin>} />
         <Route path="/health-reminders" element={<RequireAdmin><AdminLayout><HealthReminders /></AdminLayout></RequireAdmin>} />
         <Route path="/audit-logs" element={<RequireAdmin><AdminLayout><AuditLogs /></AdminLayout></RequireAdmin>} />
