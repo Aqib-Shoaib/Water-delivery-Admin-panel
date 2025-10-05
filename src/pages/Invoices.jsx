@@ -14,7 +14,7 @@ export default function Invoices() {
   const [total, setTotal] = useState(0)
   const [limit, setLimit] = useState(20)
   const searchable = ['number','status','order.customer.name','order.customer.email']
-  const { items: view, controls, setItems: setCtlItems } = useTableControls(items, { initialPageSize: 10, searchableKeys: searchable })
+  const { items: view, controls } = useTableControls(items, { initialPageSize: 10, searchableKeys: searchable })
 
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
 
@@ -27,7 +27,6 @@ export default function Invoices() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setItems(data.items)
-      setCtlItems(data.items)
       setTotal(data.total)
       setPage(data.page)
       setLimit(data.limit)

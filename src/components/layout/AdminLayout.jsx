@@ -14,10 +14,10 @@ export default function AdminLayout({ children }) {
   const { settings } = useSettings()
 
   return (
-    <div className="h-screen bg-gray-50 text-gray-900 flex overflow-y-hidden w-screen">
+    <div className="h-screen bg-gray-50 text-gray-900 grid grid-cols-[250px_1fr] overflow-y-hidden w-screen">
       <Sidebar open={open} onClose={() => setOpen(false)} settings={settings} />
 
-      <div className="flex-1">
+      <div className="">
         <Topbar onMenu={() => setOpen(true)} onRequestLogout={() => setShowLogoutConfirm(true)} settings={settings} />
 
         <main className="py-4 md:py-6 px-4 h-full">

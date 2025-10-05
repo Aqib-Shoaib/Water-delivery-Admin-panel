@@ -4,12 +4,12 @@ import { useAuth } from "../../context/AuthContext"
 export default function Sidebar({ open, onClose, settings }) {
   const { hasPermission } = useAuth()
   const navCls = ({ isActive }) =>
-    `nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-      isActive ? 'bg-light-blue text-primary border-r-4 border-medium-blue' : 'text-gray-600 hover:bg-blue-50'
+    `nav-item flex w-full items-center whitespace-nowrap border-b space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+      isActive ? 'bg-light-blue text-primary border-r-4 border-medium-blue' : 'text-gray-600 hover:bg-blue-50 border-b-transparent'
     }`
 
   return (
-    <div className={`w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-40 fixed inset-y-0 left-0 md:static`}>
+    <div className={`w-64 bg-white shadow-xl z-40 relative pb-20 overflow-y-scroll`}>
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center space-x-3">
@@ -31,7 +31,7 @@ export default function Sidebar({ open, onClose, settings }) {
       </div>
 
       {/* Navigation */}
-      <nav className="p-4 space-y-2 pb-10">
+      <nav className="p-4 space-y-2">
         <NavLink to="/" end className={navCls}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
@@ -127,7 +127,10 @@ export default function Sidebar({ open, onClose, settings }) {
         </NavLink>
       </nav>
 
-      {/* Removed bottom user card and watermark to allow full-height scrolling */}
+      {/* add logo water mark here */}
+      <div className="w-full flex items-center justify-center opacity-15">
+        <img src={settings?.logoUrl} alt="Logo" className="w-16 h-16 object-cover" />
+      </div>
     </div>
   )
 }

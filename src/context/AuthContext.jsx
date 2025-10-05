@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
     return r === role.toLowerCase()
   }
   const hasPermission = (perm) => {
-    if (hasRole('admin')) return true
+    if (hasRole('admin') || hasRole('superadmin')) return true
     const perms = Array.isArray(user?.permissions) ? user.permissions : []
     return perms.map(p => String(p).toLowerCase()).includes(String(perm).toLowerCase())
   }

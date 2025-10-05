@@ -32,16 +32,15 @@ function RequireAuth({ children }) {
 function RequireAdmin({ children }) {
   const { isAuthed, user, logout } = useAuth()
   if (!isAuthed) return <Login />
-  if (user?.role !== 'admin') {
-    return (
-      <div className="max-w-2xl mx-auto p-6">
-        <h2 className="text-xl font-semibold">Not authorized</h2>
+
+  if (user?.role === 'admin' || user?.role === 'superadmin') return children
+  return (
+    <div className="max-w-2xl mx-auto p-6">
+      <h2 className="text-xl font-semibold">Not authorized</h2>
         <p className="text-gray-600 mt-2">You must be an admin to access this page.</p>
         <button onClick={logout} className="mt-4 px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Logout</button>
       </div>
     )
-  }
-  return children
 }
 
 function App() {

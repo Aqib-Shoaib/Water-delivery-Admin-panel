@@ -11,14 +11,6 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
     logoUrl: initial?.logoUrl || '',
     whatsappLink: initial?.whatsappLink || '',
     whatsappPhone: initial?.whatsappPhone || '',
-    // About Us
-    missionStatement: initial?.missionStatement || '',
-    visionStatement: initial?.visionStatement || '',
-    ceoMessage: initial?.ceoMessage || '',
-    hqAddress: initial?.hqAddress || '',
-    customerFeedbackLink: initial?.customerFeedbackLink || '',
-    socialLinks: initial?.socialLinks || [],
-    usefulLinks: initial?.usefulLinks || [],
     customerAppName: initial?.customerAppName || '',
     customerAppAndroidLink: initial?.customerAppAndroidLink || '',
     customerAppIOSLink: initial?.customerAppIOSLink || '',
@@ -107,13 +99,6 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
         address,
         whatsappLink,
         whatsappPhone,
-        missionStatement,
-        visionStatement,
-        ceoMessage,
-        hqAddress,
-        customerFeedbackLink,
-        socialLinks,
-        usefulLinks,
         customerAppName,
         customerAppAndroidLink,
         customerAppIOSLink,
@@ -129,13 +114,6 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
         whatsappLink,
         whatsappPhone,
         logoUrl,
-        missionStatement,
-        visionStatement,
-        ceoMessage,
-        hqAddress,
-        customerFeedbackLink,
-        socialLinks,
-        usefulLinks,
         customerAppName,
         customerAppAndroidLink,
         customerAppIOSLink,
@@ -186,78 +164,6 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
             <textarea rows={3} className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
           </div>
 
-          {/* About Us Section */}
-          <div className="md:col-span-2 mt-2">
-            <div className="text-sm font-semibold text-primary">About Us</div>
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-primary mb-1">Mission Statement</label>
-            <textarea rows={3} className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.missionStatement} onChange={e => setForm({ ...form, missionStatement: e.target.value })} />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-primary mb-1">Vision Statement</label>
-            <textarea rows={3} className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.visionStatement} onChange={e => setForm({ ...form, visionStatement: e.target.value })} />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-primary mb-1">CEO’s Message</label>
-            <textarea rows={4} className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.ceoMessage} onChange={e => setForm({ ...form, ceoMessage: e.target.value })} />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-primary mb-1">Company Worldwide Presence (Head office address)</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.hqAddress} onChange={e => setForm({ ...form, hqAddress: e.target.value })} />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-primary mb-1">Customer Feedback (Useful Link)</label>
-            <div className="flex gap-2">
-              <input className="flex-1 form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="https://..." value={form.customerFeedbackLink} onChange={e => setForm({ ...form, customerFeedbackLink: e.target.value })} />
-              <button type="button" className="px-3 py-2 text-sm rounded-md border" onClick={() => { navigator.clipboard?.writeText?.(form.customerFeedbackLink || '') }}>Copy</button>
-            </div>
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-primary mb-1">Social Media Links</label>
-            <div className="space-y-2">
-              {(form.socialLinks || []).map((row, idx) => (
-                <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <input placeholder="Label (e.g., Facebook)" className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" value={row.label || ''} onChange={e => {
-                    const copy = [...form.socialLinks]; copy[idx] = { ...copy[idx], label: e.target.value }; setForm({ ...form, socialLinks: copy })
-                  }} />
-                  <input placeholder="Icon (e.g., fa-facebook)" className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" value={row.icon || ''} onChange={e => {
-                    const copy = [...form.socialLinks]; copy[idx] = { ...copy[idx], icon: e.target.value }; setForm({ ...form, socialLinks: copy })
-                  }} />
-                  <div className="flex gap-2">
-                    <input placeholder="URL" className="flex-1 form-input px-3 py-2 border-2 border-gray-200 rounded-lg" value={row.url || ''} onChange={e => {
-                      const copy = [...form.socialLinks]; copy[idx] = { ...copy[idx], url: e.target.value }; setForm({ ...form, socialLinks: copy })
-                    }} />
-                    <button type="button" className="px-3 py-2 text-sm rounded-md border" onClick={() => {
-                      const copy = [...form.socialLinks]; copy.splice(idx,1); setForm({ ...form, socialLinks: copy })
-                    }}>Remove</button>
-                  </div>
-                </div>
-              ))}
-              <button type="button" className="px-3 py-2 text-sm rounded-md border" onClick={() => setForm({ ...form, socialLinks: [...(form.socialLinks || []), { label: '', icon: '', url: '' }] })}>Add Social Link</button>
-            </div>
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-primary mb-1">Useful Files/Forms/Docs</label>
-            <div className="space-y-2">
-              {(form.usefulLinks || []).map((row, idx) => (
-                <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <input placeholder="Label (e.g., Onboarding Form)" className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" value={row.label || ''} onChange={e => {
-                    const copy = [...form.usefulLinks]; copy[idx] = { ...copy[idx], label: e.target.value }; setForm({ ...form, usefulLinks: copy })
-                  }} />
-                  <div className="flex gap-2">
-                    <input placeholder="URL" className="flex-1 form-input px-3 py-2 border-2 border-gray-200 rounded-lg" value={row.url || ''} onChange={e => {
-                      const copy = [...form.usefulLinks]; copy[idx] = { ...copy[idx], url: e.target.value }; setForm({ ...form, usefulLinks: copy })
-                    }} />
-                    <button type="button" className="px-3 py-2 text-sm rounded-md border" onClick={() => {
-                      const copy = [...form.usefulLinks]; copy.splice(idx,1); setForm({ ...form, usefulLinks: copy })
-                    }}>Remove</button>
-                  </div>
-                </div>
-              ))}
-              <button type="button" className="px-3 py-2 text-sm rounded-md border" onClick={() => setForm({ ...form, usefulLinks: [...(form.usefulLinks || []), { label: '', url: '' }] })}>Add Useful Link</button>
-            </div>
-          </div>
 
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Logo</label>

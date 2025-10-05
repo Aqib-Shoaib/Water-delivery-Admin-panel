@@ -24,7 +24,7 @@ export default function About() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`${API_BASE}/api/site-settings`, { headers })
+      const res = await fetch(`${API_BASE}/api/about`, { headers })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setForm({
@@ -47,7 +47,7 @@ export default function About() {
     setError('')
     try {
       const payload = { ...form }
-      const res = await fetch(`${API_BASE}/api/site-settings`, { method: 'PUT', headers, body: JSON.stringify(payload) })
+      const res = await fetch(`${API_BASE}/api/about`, { method: 'PUT', headers, body: JSON.stringify(payload) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       await load()
     } catch (e) { setError(e.message) } finally { setSaving(false) }
