@@ -11,15 +11,12 @@ import HealthReminders from './pages/HealthReminders.jsx'
 import Login from './pages/Login.jsx'
 import Users from './pages/Users.jsx'
 import Profile from './pages/Profile.jsx'
-import AuditLogs from './pages/AuditLogs.jsx'
 import Invoices from './pages/Invoices.jsx'
 import Docs from './pages/Docs.jsx'
 import Divisions from './pages/Divisions.jsx'
 import Assets from './pages/Assets.jsx'
 import History from './pages/History.jsx'
-import About from './pages/About.jsx'
-import Contact from './pages/Contact.jsx'
-import Invite from './pages/Invite.jsx'
+import Messages from './pages/Messages.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import AdminLayout from './components/layout/AdminLayout.jsx'
 
@@ -67,6 +64,7 @@ function App() {
         <Route path="/invoices" element={<RequireAdmin><AdminLayout><Invoices /></AdminLayout></RequireAdmin>} />
         <Route path="/docs" element={<RequireAdmin><AdminLayout><Docs /></AdminLayout></RequireAdmin>} />
         <Route path="/zones" element={<RequireAdmin><AdminLayout><Divisions /></AdminLayout></RequireAdmin>} />
+        <Route path="/messages" element={<RequireAdmin><AdminLayout><Messages /></AdminLayout></RequireAdmin>} />
       </Routes>
     </BrowserRouter>
   )

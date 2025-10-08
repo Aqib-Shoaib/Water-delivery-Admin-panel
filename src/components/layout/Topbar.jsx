@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "../../context/AuthContext"
 import { NavLink } from "react-router-dom"
 
@@ -183,6 +183,17 @@ export default function Topbar({ onMenu, onRequestLogout, settings }) {
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3M12 22a10 10 0 110-20 10 10 0 010 20z" />
+              </svg>
+            </NavLink>
+
+            {/* Messages button */}
+            <NavLink
+              to="/messages"
+              className={({isActive}) => `inline-flex items-center space-x-2 px-3 py-2 text-sm rounded-md ${isActive ? 'text-primary' : 'text-gray-700'}`}
+              title="Messages"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h8M8 14h6M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 21l1.8-4A8.9 8.9 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </NavLink>
   
