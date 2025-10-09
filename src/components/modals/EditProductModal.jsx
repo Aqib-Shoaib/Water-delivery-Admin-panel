@@ -4,16 +4,39 @@ import { useAuth } from '../../context/AuthContext.jsx'
 export default function EditProductModal({ open, onClose, onSaved, apiBase, product }) {
   const { token } = useAuth()
   const [form, setForm] = useState({ name: '', sizeLiters: '', price: '' })
+  const [images, setImages] = useState([])
+  const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (product) {
       setForm({ name: product.name || '', sizeLiters: String(product.sizeLiters ?? ''), price: String(product.price ?? '') })
+      setImages(Array.isArray(product.images) ? product.images : [])
     }
   }, [product])
 
   if (!open || !product) return null
+
+  async function onPickImage(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('image', file)
+      const res = await fetch(`${apiBase}/api/products/upload-image`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: fd,
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setImages(prev => [...prev, data.url])
+    } catch (err) {
+      setError(err.message)
+    } finally { setUploading(false); e.target.value = '' }
+  }
 
   async function onSubmit(e) {
     e.preventDefault()
@@ -27,6 +50,7 @@ export default function EditProductModal({ open, onClose, onSaved, apiBase, prod
           name: form.name.trim(),
           sizeLiters: Number(form.sizeLiters),
           price: Number(form.price),
+          images,
         }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -54,6 +78,24 @@ export default function EditProductModal({ open, onClose, onSaved, apiBase, prod
               <label className="block text-sm font-medium text-primary mb-1">Price</label>
               <input type="number" min="0" step="0.01" className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} required />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-primary mb-1">Images</label>
+            <div className="flex items-center gap-2 mb-2">
+              <input type="file" accept="image/*" onChange={onPickImage} disabled={uploading} />
+              {uploading && <span className="text-xs text-gray-500">Uploading...</span>}
+            </div>
+            {images.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {images.map((url, idx) => (
+                  <div key={url} className="relative">
+                    <img src={url} alt="product" className="h-16 w-16 object-cover rounded border" />
+                    <button type="button" className="absolute -top-2 -right-2 bg-white border rounded-full text-xs px-1"
+                            onClick={() => setImages(images.filter((_,i)=>i!==idx))}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2 pt-2">

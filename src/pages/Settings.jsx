@@ -31,11 +31,14 @@ export default function Settings() {
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="text-sm"><span className="font-medium text-primary">Site Name:</span> {settings?.siteName || '—'}</div>
-              <div className="text-sm"><span className="font-medium text-primary">Contact Email:</span> {settings?.contactEmail || '—'}</div>
-              <div className="text-sm"><span className="font-medium text-primary">Contact Phone:</span> {settings?.contactPhone || '—'}</div>
+              <div className="text-sm"><span className="font-medium text-primary">Contact Emails:</span> {(settings?.emails && settings.emails.length)
+                ? settings.emails.join(', ')
+                : (settings?.contactEmail || '—')}</div>
+              <div className="text-sm"><span className="font-medium text-primary">Phones:</span> {(settings?.phones && settings.phones.length)
+                ? settings.phones.join(', ')
+                : (settings?.contactPhone || '—')}</div>
               <div className="text-sm"><span className="font-medium text-primary">Address:</span> {settings?.address || '—'}</div>
               <div className="text-sm"><span className="font-medium text-primary">WhatsApp Link:</span> {settings?.whatsappLink ? <a className="text-medium-blue underline" href={settings.whatsappLink} target="_blank" rel="noreferrer">{settings.whatsappLink}</a> : '—'}</div>
-              <div className="text-sm"><span className="font-medium text-primary">WhatsApp Phone:</span> {settings?.whatsappPhone || '—'}</div>
             </div>
             <div>
               <div className="text-sm font-medium text-primary mb-1">Logo</div>

@@ -14,16 +14,14 @@ export default function AdminLayout({ children }) {
   const { settings } = useSettings()
 
   return (
-    <div className="h-screen bg-gray-50 text-gray-900 grid grid-cols-[250px_1fr] overflow-y-hidden w-screen">
+    <div className="h-screen w-screen bg-gray-50 text-gray-900 grid grid-cols-[250px_1fr] overflow-hidden">
       <Sidebar open={open} onClose={() => setOpen(false)} settings={settings} />
 
-      <div className="">
+      <div className="grid grid-rows-[auto_1fr] h-screen">
         <Topbar onMenu={() => setOpen(true)} onRequestLogout={() => setShowLogoutConfirm(true)} settings={settings} />
 
-        <main className="py-4 md:py-6 px-4 h-full">
-          <div className="w-full h-full overflow-y-scroll">
-            {children}
-          </div>
+        <main className="py-4 md:py-6 px-4 h-full overflow-y-auto">
+          {children}
         </main>
       </div>
 
@@ -46,3 +44,4 @@ export default function AdminLayout({ children }) {
     </div>
   )
 }
+

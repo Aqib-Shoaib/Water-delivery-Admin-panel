@@ -5,12 +5,17 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
   const { token } = useAuth()
   const [form, setForm] = useState({
     siteName: initial?.siteName || '',
-    contactEmail: initial?.contactEmail || '',
-    contactPhone: initial?.contactPhone || '',
+    // emails: prefer array if exists, else derive from legacy string
+    emails: Array.isArray(initial?.emails)
+      ? initial.emails
+      : (initial?.contactEmail ? [initial.contactEmail] : []),
+    // phones: prefer array if exists, else derive from legacy contactPhone/whatsappPhone
+    phones: Array.isArray(initial?.phones)
+      ? initial.phones
+      : ([initial?.contactPhone, initial?.whatsappPhone].filter(Boolean)),
     address: initial?.address || '',
     logoUrl: initial?.logoUrl || '',
     whatsappLink: initial?.whatsappLink || '',
-    whatsappPhone: initial?.whatsappPhone || '',
     customerAppName: initial?.customerAppName || '',
     customerAppAndroidLink: initial?.customerAppAndroidLink || '',
     customerAppIOSLink: initial?.customerAppIOSLink || '',
@@ -94,11 +99,10 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
       }
       const {
         siteName,
-        contactEmail,
-        contactPhone,
+        emails,
+        phones,
         address,
         whatsappLink,
-        whatsappPhone,
         customerAppName,
         customerAppAndroidLink,
         customerAppIOSLink,
@@ -108,11 +112,10 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
       } = form
       const payload = {
         siteName,
-        contactEmail,
-        contactPhone,
+        emails,
+        phones,
         address,
         whatsappLink,
-        whatsappPhone,
         logoUrl,
         customerAppName,
         customerAppAndroidLink,
@@ -134,7 +137,7 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={() => onClose(false)} />
-      <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-xl p-6">
+      <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-xl p-6 max-h-[80vh] overflow-y-auto">
         <h3 className="text-lg font-semibold text-primary">Edit Site Settings</h3>
         <p className="text-sm text-gray-600 mt-1">Update site branding, contact information, and mobile app settings.</p>
         <form onSubmit={onSubmit} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -143,21 +146,43 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
             <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.siteName} onChange={e => setForm({ ...form, siteName: e.target.value })} required />
           </div>
           
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Contact Email</label>
-            <input type="email" className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.contactEmail} onChange={e => setForm({ ...form, contactEmail: e.target.value })} />
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-primary mb-1">Contact Emails</label>
+            <div className="space-y-2">
+              {(form.emails || []).map((em, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <input type="email" className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={em}
+                         onChange={e => {
+                           const emails = [...form.emails]; emails[idx] = e.target.value; setForm({ ...form, emails })
+                         }} />
+                  <button type="button" className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                          onClick={() => setForm({ ...form, emails: form.emails.filter((_, i) => i !== idx) })}>Remove</button>
+                </div>
+              ))}
+              <button type="button" className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                      onClick={() => setForm({ ...form, emails: [...(form.emails || []), ''] })}>Add Email</button>
+            </div>
           </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Contact Phone</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.contactPhone} onChange={e => setForm({ ...form, contactPhone: e.target.value })} />
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-primary mb-1">Phones</label>
+            <div className="space-y-2">
+              {(form.phones || []).map((ph, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="e.g. +1234567890" value={ph}
+                         onChange={e => {
+                           const phones = [...form.phones]; phones[idx] = e.target.value; setForm({ ...form, phones })
+                         }} />
+                  <button type="button" className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                          onClick={() => setForm({ ...form, phones: form.phones.filter((_, i) => i !== idx) })}>Remove</button>
+                </div>
+              ))}
+              <button type="button" className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                      onClick={() => setForm({ ...form, phones: [...(form.phones || []), ''] })}>Add Phone</button>
+            </div>
           </div>
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">WhatsApp Link</label>
             <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="https://wa.me/1234567890" value={form.whatsappLink} onChange={e => setForm({ ...form, whatsappLink: e.target.value })} />
-          </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">WhatsApp Phone</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="e.g. +1234567890" value={form.whatsappPhone} onChange={e => setForm({ ...form, whatsappPhone: e.target.value })} />
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-primary mb-1">Address</label>
@@ -168,11 +193,17 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Logo</label>
             <input type="file" accept="image/*" onChange={e => setLogoFile(e.target.files?.[0] || null)} />
-            {form.logoUrl && (
+            {logoFile ? (
+              <div className="mt-2 text-xs text-gray-600 break-all">Selected: {logoFile.name}
+                <div className="mt-2">
+                  <img src={URL.createObjectURL(logoFile)} alt="Logo preview" className="h-12 object-contain" />
+                </div>
+              </div>
+            ) : form.logoUrl ? (
               <div className="mt-2">
                 <img src={form.logoUrl} alt="Logo preview" className="h-12 object-contain" />
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Mobile Apps - Customer App */}
@@ -186,11 +217,17 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Customer App Logo</label>
             <input type="file" accept="image/*" onChange={e => setCustomerLogoFile(e.target.files?.[0] || null)} />
-            {form.customerAppLogoUrl && (
+            {customerLogoFile ? (
+              <div className="mt-2 text-xs text-gray-600 break-all">Selected: {customerLogoFile.name}
+                <div className="mt-2">
+                  <img src={URL.createObjectURL(customerLogoFile)} alt="Customer app logo" className="h-12 object-contain" />
+                </div>
+              </div>
+            ) : form.customerAppLogoUrl ? (
               <div className="mt-2">
                 <img src={form.customerAppLogoUrl} alt="Customer app logo" className="h-12 object-contain" />
               </div>
-            )}
+            ) : null}
           </div>
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Customer App Android Link</label>
@@ -212,11 +249,17 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Driver App Logo</label>
             <input type="file" accept="image/*" onChange={e => setDriverLogoFile(e.target.files?.[0] || null)} />
-            {form.driverAppLogoUrl && (
+            {driverLogoFile ? (
+              <div className="mt-2 text-xs text-gray-600 break-all">Selected: {driverLogoFile.name}
+                <div className="mt-2">
+                  <img src={URL.createObjectURL(driverLogoFile)} alt="Driver app logo" className="h-12 object-contain" />
+                </div>
+              </div>
+            ) : form.driverAppLogoUrl ? (
               <div className="mt-2">
                 <img src={form.driverAppLogoUrl} alt="Driver app logo" className="h-12 object-contain" />
               </div>
-            )}
+            ) : null}
           </div>
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Driver App Android Link</label>
