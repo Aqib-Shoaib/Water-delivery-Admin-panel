@@ -91,6 +91,7 @@ export default function Messages() {
     if (tab === 'scheduled') scheduledApi.reload()
     if (tab === 'premium') premiumApi.reload()
     if (tab === 'trash') trashApi.reload()
+      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, token])
 
   async function moveToTrash(m) {
@@ -117,10 +118,59 @@ export default function Messages() {
   // Compose state
   const [subject, setSubject] = React.useState('')
   const [body, setBody] = React.useState('')
-  const [recipients, setRecipients] = React.useState('') // comma-separated user IDs
+  // Recipients picker state
+  const [selectedRecipients, setSelectedRecipients] = React.useState([]) // [{_id, name, email}]
+  const [userQuery, setUserQuery] = React.useState('')
+  const [userResults, setUserResults] = React.useState([])
+  const [userLoading, setUserLoading] = React.useState(false)
+  const [userError, setUserError] = React.useState('')
+  const [usersCache, setUsersCache] = React.useState([]) // full list fetched once
+  const [usersLoaded, setUsersLoaded] = React.useState(false)
   const [scheduledAt, setScheduledAt] = React.useState('')
   const [busy, setBusy] = React.useState(false)
-  const recipientArray = React.useMemo(() => recipients.split(',').map(s => s.trim()).filter(Boolean), [recipients])
+  const recipientArray = React.useMemo(() => (selectedRecipients?.map(u => u._id) || []), [selectedRecipients])
+
+  // Load users once and filter client-side by name/email to power search
+  React.useEffect(() => {
+    let active = true
+    if (!userQuery) { setUserResults([]); setUserError(''); return }
+    setUserLoading(true); setUserError('')
+    const t = setTimeout(async () => {
+      try {
+        let source = usersCache
+        if (!usersLoaded) {
+          const res = await fetch(`${API_BASE}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } })
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          const data = await res.json()
+          source = Array.isArray(data) ? data : []
+          if (active) { setUsersCache(source); setUsersLoaded(true) }
+        }
+        if (!active) return
+        const q = userQuery.toLowerCase()
+        const filtered = (source || []).filter(u => {
+          const name = (u.name || `${u.firstName || ''} ${u.lastName || ''}` || u.fullName || '').trim().toLowerCase()
+          return name.includes(q)
+        }).slice(0, 20)
+        setUserResults(filtered)
+      } catch {
+        if (!active) return
+        setUserError('Unable to load users for search')
+        setUserResults([])
+      } finally { if (active) setUserLoading(false) }
+    }, 250)
+    return () => { active = false; clearTimeout(t) }
+  }, [userQuery, token, usersCache, usersLoaded])
+
+  function addRecipient(user) {
+    if (!user || !user._id) return
+    if (selectedRecipients.find(u => u._id === user._id)) return
+    setSelectedRecipients(prev => [...prev, { _id: user._id, name: user.name || user.fullName || user.email || 'User', email: user.email }])
+    setUserQuery(''); setUserResults([])
+  }
+
+  function removeRecipient(id) {
+    setSelectedRecipients(prev => prev.filter(u => u._id !== id))
+  }
 
   async function createDraft() {
     setBusy(true)
@@ -131,7 +181,7 @@ export default function Messages() {
         body: JSON.stringify({ subject, body, recipients: recipientArray })
       })
       if (res.ok) {
-        setSubject(''); setBody(''); setRecipients(''); setScheduledAt('');
+        setSubject(''); setBody(''); setSelectedRecipients([]); setUserQuery(''); setScheduledAt('');
         draftsApi.reload(); setTab('drafts')
       }
     } finally { setBusy(false) }
@@ -146,7 +196,7 @@ export default function Messages() {
         body: JSON.stringify({ subject, body, recipients: recipientArray })
       })
       if (res.ok) {
-        setSubject(''); setBody(''); setRecipients(''); setScheduledAt('');
+        setSubject(''); setBody(''); setSelectedRecipients([]); setUserQuery(''); setScheduledAt('');
         sentApi.reload(); setTab('sent')
       }
     } finally { setBusy(false) }
@@ -162,7 +212,7 @@ export default function Messages() {
         body: JSON.stringify({ subject, body, recipients: recipientArray, scheduledAt })
       })
       if (res.ok) {
-        setSubject(''); setBody(''); setRecipients(''); setScheduledAt('');
+        setSubject(''); setBody(''); setSelectedRecipients([]); setUserQuery(''); setScheduledAt('');
         scheduledApi.reload(); setTab('scheduled')
       }
     } finally { setBusy(false) }
@@ -220,16 +270,50 @@ export default function Messages() {
             <input className="w-full px-3 py-2 border rounded-md" value={subject} onChange={e => setSubject(e.target.value)} placeholder="Subject" />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Recipients (User IDs, comma-separated)</label>
-            <input className="w-full px-3 py-2 border rounded-md" value={recipients} onChange={e => setRecipients(e.target.value)} placeholder="603d... , 604e..." />
+            <label className="block text-sm text-gray-600 mb-1">Recipients</label>
+            {/* Chips */}
+            {selectedRecipients.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {selectedRecipients.map(u => (
+                  <span key={u._id} className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full border border-medium-blue text-primary">
+                    <span className="max-w-[180px] truncate">{u.name || u.email || u._id}</span>
+                    <button type="button" className="ml-1 text-gray-500 hover:text-red-600" onClick={() => removeRecipient(u._id)}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {/* Search input */}
+            <input
+              className="w-full px-3 py-2 border-2 border-gray-200 rounded-md focus:border-medium-blue"
+              value={userQuery}
+              onChange={e => setUserQuery(e.target.value)}
+              placeholder="Search users by name"
+            />
+            {/* Results dropdown */}
+            {userQuery && (
+              <div className="mt-1 max-h-56 overflow-auto border rounded-md bg-white shadow-md">
+                {userLoading && <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>}
+                {!userLoading && userError && <div className="px-3 py-2 text-sm text-red-600">{userError}</div>}
+                {!userLoading && !userError && userResults.length === 0 && (
+                  <div className="px-3 py-2 text-sm text-gray-500">No users found</div>
+                )}
+                {!userLoading && !userError && userResults.map(u => (
+                  <button key={u._id} type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between"
+                          onClick={() => addRecipient(u)}>
+                    <span className="truncate text-primary">{u.name || u.fullName || u.email || u._id}</span>
+                    <span className="ml-2 text-xs text-gray-500 truncate">{u.email}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <RichTextEditor value={body} onChange={setBody} apiBase={API_BASE} />
           <div className="flex flex-wrap items-center gap-3">
-            <button disabled={busy} className="px-3 py-2 text-sm rounded-md border hover:bg-gray-50 disabled:opacity-50" onClick={createDraft}>Save Draft</button>
-            <button disabled={busy} className="px-3 py-2 text-sm rounded-md bg-primary text-white hover:opacity-90 disabled:opacity-50" onClick={sendNow}>Send Now</button>
+            <button disabled={busy || recipientArray.length === 0} className="px-3 py-2 text-sm rounded-md border hover:bg-gray-50 disabled:opacity-50" onClick={createDraft}>Save Draft</button>
+            <button disabled={busy || recipientArray.length === 0} className="px-3 py-2 text-sm rounded-md bg-primary text-white hover:opacity-90 disabled:opacity-50" onClick={sendNow}>Send Now</button>
             <div className="flex items-center gap-2">
               <input type="datetime-local" className="px-2 py-2 border rounded-md" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} />
-              <button disabled={busy || !scheduledAt} className="px-3 py-2 text-sm rounded-md bg-medium-blue text-white hover:opacity-90 disabled:opacity-50" onClick={scheduleSend}>Schedule</button>
+              <button disabled={busy || !scheduledAt || recipientArray.length === 0} className="px-3 py-2 text-sm rounded-md bg-medium-blue text-white hover:opacity-90 disabled:opacity-50" onClick={scheduleSend}>Schedule</button>
             </div>
           </div>
           <div className="text-xs text-gray-500">

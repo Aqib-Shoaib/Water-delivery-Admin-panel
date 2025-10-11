@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
+import ImageUpload from '../ui/ImageUpload.jsx'
 
 export default function EditProductModal({ open, onClose, onSaved, apiBase, product }) {
   const { token } = useAuth()
@@ -18,9 +19,7 @@ export default function EditProductModal({ open, onClose, onSaved, apiBase, prod
 
   if (!open || !product) return null
 
-  async function onPickImage(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  async function uploadImage(file) {
     setUploading(true)
     try {
       const fd = new FormData()
@@ -32,10 +31,11 @@ export default function EditProductModal({ open, onClose, onSaved, apiBase, prod
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      setImages(prev => [...prev, data.url])
+      return data.url
     } catch (err) {
       setError(err.message)
-    } finally { setUploading(false); e.target.value = '' }
+      throw err
+    } finally { setUploading(false) }
   }
 
   async function onSubmit(e) {
@@ -81,10 +81,15 @@ export default function EditProductModal({ open, onClose, onSaved, apiBase, prod
           </div>
           <div>
             <label className="block text-sm font-medium text-primary mb-1">Images</label>
-            <div className="flex items-center gap-2 mb-2">
-              <input type="file" accept="image/*" onChange={onPickImage} disabled={uploading} />
-              {uploading && <span className="text-xs text-gray-500">Uploading...</span>}
-            </div>
+            <ImageUpload
+              buttonText={uploading ? 'Uploading...' : 'Add Images'}
+              upload={uploadImage}
+              onUploaded={(url)=> setImages(prev => [...prev, url])}
+              disabled={uploading}
+              size="sm"
+              className="mb-2"
+              multiple={true}
+            />
             {images.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {images.map((url, idx) => (

@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext"
 
-export default function Sidebar({ open, onClose, settings }) {
+export default function Sidebar({ settings }) {
   const { hasPermission } = useAuth()
   const navCls = ({ isActive }) =>
     `nav-item flex w-full items-center whitespace-nowrap border-b space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
@@ -26,7 +26,6 @@ export default function Sidebar({ open, onClose, settings }) {
             <h2 className="text-lg font-bold text-primary">{settings?.siteName || 'AdminPanel'}</h2>
             <p className="text-xs text-gray-500">Dashboard</p>
           </div>
-          <button className="ml-auto md:hidden p-2 rounded hover:bg-gray-100" onClick={onClose} aria-label="Close sidebar">✕</button>
         </div>
       </div>
 
@@ -85,22 +84,22 @@ export default function Sidebar({ open, onClose, settings }) {
             <span>Invite</span>
           </NavLink>
         )}
-        {false && (
-          <NavLink to="/drivers" className={navCls}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-            </svg>
-            <span>Drivers</span>
-          </NavLink>
-        )}
-        {false && (
-          <NavLink to="/customers" className={navCls}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5V8H2v12h5m10 0V8m0 12H7m0 0v-2a3 3 0 013-3h4a3 3 0 013 3v2" />
-            </svg>
-            <span>Customers</span>
-          </NavLink>
-        )}
+        {/*
+        <NavLink to="/drivers" className={navCls}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+          </svg>
+          <span>Drivers</span>
+        </NavLink>
+        */}
+        {/*
+        <NavLink to="/customers" className={navCls}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5V8H2v12h5m10 0V8m0 12H7m0 0v-2a3 3 0 013-3h4a3 3 0 013 3v2" />
+          </svg>
+          <span>Customers</span>
+        </NavLink>
+        */}
         <NavLink to="/zones" className={navCls}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7l9-4 9 4-9 4-9-4zm0 6l9 4 9-4" />

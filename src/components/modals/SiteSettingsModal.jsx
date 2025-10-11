@@ -1,30 +1,33 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import ImageUpload from '../ui/ImageUpload.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 
 export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
   const { token } = useAuth()
-  const [form, setForm] = useState({
-    siteName: initial?.siteName || '',
-    // emails: prefer array if exists, else derive from legacy string
-    emails: Array.isArray(initial?.emails)
-      ? initial.emails
-      : (initial?.contactEmail ? [initial.contactEmail] : []),
-    // phones: prefer array if exists, else derive from legacy contactPhone/whatsappPhone
-    phones: Array.isArray(initial?.phones)
-      ? initial.phones
-      : ([initial?.contactPhone, initial?.whatsappPhone].filter(Boolean)),
-    address: initial?.address || '',
-    logoUrl: initial?.logoUrl || '',
-    whatsappLink: initial?.whatsappLink || '',
-    customerAppName: initial?.customerAppName || '',
-    customerAppAndroidLink: initial?.customerAppAndroidLink || '',
-    customerAppIOSLink: initial?.customerAppIOSLink || '',
-    customerAppLogoUrl: initial?.customerAppLogoUrl || '',
-    driverAppName: initial?.driverAppName || '',
-    driverAppAndroidLink: initial?.driverAppAndroidLink || '',
-    driverAppIOSLink: initial?.driverAppIOSLink || '',
-    driverAppLogoUrl: initial?.driverAppLogoUrl || '',
-  })
+  function buildInitialForm(src) {
+    return {
+      siteName: src?.siteName || '',
+      emails: Array.isArray(src?.emails)
+        ? src.emails
+        : (src?.contactEmail ? [src.contactEmail] : []),
+      phones: Array.isArray(src?.phones)
+        ? src.phones
+        : ([src?.contactPhone, src?.whatsappPhone].filter(Boolean)),
+      address: src?.address || '',
+      logoUrl: src?.logoUrl || '',
+      whatsappLink: src?.whatsappLink || '',
+      customerAppName: src?.customerAppName || '',
+      customerAppAndroidLink: src?.customerAppAndroidLink || '',
+      customerAppIOSLink: src?.customerAppIOSLink || '',
+      customerAppLogoUrl: src?.customerAppLogoUrl || '',
+      driverAppName: src?.driverAppName || '',
+      driverAppAndroidLink: src?.driverAppAndroidLink || '',
+      driverAppIOSLink: src?.driverAppIOSLink || '',
+      driverAppLogoUrl: src?.driverAppLogoUrl || '',
+    }
+  }
+
+  const [form, setForm] = useState(buildInitialForm(initial))
   const [logoFile, setLogoFile] = useState(null)
   const [customerLogoFile, setCustomerLogoFile] = useState(null)
   const [driverLogoFile, setDriverLogoFile] = useState(null)
@@ -32,6 +35,16 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
   const [error, setError] = useState('')
 
   const headers = useMemo(() => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }), [token])
+
+  // Re-hydrate form with latest initial data whenever modal opens or initial changes
+  useEffect(() => {
+    if (open) {
+      setForm(buildInitialForm(initial))
+      setLogoFile(null)
+      setCustomerLogoFile(null)
+      setDriverLogoFile(null)
+    }
+  }, [open, initial])
 
   if (!open) return null
 
@@ -137,144 +150,129 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={() => onClose(false)} />
-      <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-xl p-6 max-h-[80vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold text-primary">Edit Site Settings</h3>
-        <p className="text-sm text-gray-600 mt-1">Update site branding, contact information, and mobile app settings.</p>
-        <form onSubmit={onSubmit} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Site Name</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.siteName} onChange={e => setForm({ ...form, siteName: e.target.value })} required />
-          </div>
-          
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-primary mb-1">Contact Emails</label>
-            <div className="space-y-2">
-              {(form.emails || []).map((em, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <input type="email" className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={em}
-                         onChange={e => {
-                           const emails = [...form.emails]; emails[idx] = e.target.value; setForm({ ...form, emails })
-                         }} />
-                  <button type="button" className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
-                          onClick={() => setForm({ ...form, emails: form.emails.filter((_, i) => i !== idx) })}>Remove</button>
+      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl p-8 max-h-[85vh] overflow-y-auto border-l-4 border-primary hover-lift">
+        <h3 className="text-2xl font-bold text-primary">Edit Site Settings</h3>
+        <p className="text-sm text-gray-600 mt-1">Manage your website configuration and contact information</p>
+
+        <form onSubmit={onSubmit} className="mt-6 space-y-6">
+          {/* Contact Information */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-primary hover-lift">
+            <div className="mb-4">
+              <h4 className="text-xl font-bold text-primary mb-1">Contact Information</h4>
+              <p className="text-gray-600 text-sm">Your primary business contact details and branding</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-semibold text-primary mb-2">Site Name</label>
+                <input className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" value={form.siteName} onChange={e => setForm({ ...form, siteName: e.target.value })} required />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-primary mb-2">Contact Emails</label>
+                <div className="space-y-2">
+                  {(form.emails || []).map((em, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <input type="email" className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" value={em}
+                             onChange={e => {
+                               const emails = [...form.emails]; emails[idx] = e.target.value; setForm({ ...form, emails })
+                             }} />
+                      <button type="button" className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                              onClick={() => setForm({ ...form, emails: form.emails.filter((_, i) => i !== idx) })}>Remove</button>
+                    </div>
+                  ))}
+                  <button type="button" className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                          onClick={() => setForm({ ...form, emails: [...(form.emails || []), ''] })}>Add Email</button>
                 </div>
-              ))}
-              <button type="button" className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
-                      onClick={() => setForm({ ...form, emails: [...(form.emails || []), ''] })}>Add Email</button>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-primary mb-2">Phones</label>
+                <div className="space-y-2">
+                  {(form.phones || []).map((ph, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <input className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" placeholder="e.g. +1234567890" value={ph}
+                             onChange={e => {
+                               const phones = [...form.phones]; phones[idx] = e.target.value; setForm({ ...form, phones })
+                             }} />
+                      <button type="button" className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                              onClick={() => setForm({ ...form, phones: form.phones.filter((_, i) => i !== idx) })}>Remove</button>
+                    </div>
+                  ))}
+                  <button type="button" className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                          onClick={() => setForm({ ...form, phones: [...(form.phones || []), ''] })}>Add Phone</button>
+                </div>
+              </div>
+
+              <div className="md:col-span-1">
+                <label className="block text-sm font-semibold text-primary mb-2">WhatsApp Link</label>
+                <input className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" placeholder="https://wa.me/1234567890" value={form.whatsappLink} onChange={e => setForm({ ...form, whatsappLink: e.target.value })} />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-primary mb-2">Address</label>
+                <textarea rows={3} className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors resize-none" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
+              </div>
+
+              <div className="md:col-span-1">
+                <ImageUpload label="Logo" value={form.logoUrl} file={logoFile} onPick={(f)=>setLogoFile(f)} buttonText="Upload Logo" />
+              </div>
             </div>
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-primary mb-1">Phones</label>
-            <div className="space-y-2">
-              {(form.phones || []).map((ph, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="e.g. +1234567890" value={ph}
-                         onChange={e => {
-                           const phones = [...form.phones]; phones[idx] = e.target.value; setForm({ ...form, phones })
-                         }} />
-                  <button type="button" className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
-                          onClick={() => setForm({ ...form, phones: form.phones.filter((_, i) => i !== idx) })}>Remove</button>
-                </div>
-              ))}
-              <button type="button" className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
-                      onClick={() => setForm({ ...form, phones: [...(form.phones || []), ''] })}>Add Phone</button>
+
+          {/* Mobile Applications - Customer */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-medium-blue hover-lift">
+            <div className="mb-4">
+              <h4 className="text-xl font-bold text-primary mb-1">Mobile Applications</h4>
+              <p className="text-gray-600 text-sm">Download links for your customer application</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-semibold text-primary mb-2">Customer App Name</label>
+                <input className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" value={form.customerAppName} onChange={e => setForm({ ...form, customerAppName: e.target.value })} />
+              </div>
+              <div className="md:col-span-1">
+                <ImageUpload label="Customer App Logo" value={form.customerAppLogoUrl} file={customerLogoFile} onPick={(f)=>setCustomerLogoFile(f)} buttonText="Upload Logo" />
+              </div>
+              <div className="md:col-span-1">
+                <label className="block text-sm font-semibold text-primary mb-2">Customer App Android Link</label>
+                <input className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" placeholder="Play Store URL" value={form.customerAppAndroidLink} onChange={e => setForm({ ...form, customerAppAndroidLink: e.target.value })} />
+              </div>
+              <div className="md:col-span-1">
+                <label className="block text-sm font-semibold text-primary mb-2">Customer App iOS Link</label>
+                <input className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" placeholder="App Store URL" value={form.customerAppIOSLink} onChange={e => setForm({ ...form, customerAppIOSLink: e.target.value })} />
+              </div>
             </div>
           </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">WhatsApp Link</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="https://wa.me/1234567890" value={form.whatsappLink} onChange={e => setForm({ ...form, whatsappLink: e.target.value })} />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-primary mb-1">Address</label>
-            <textarea rows={3} className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
+
+          {/* Mobile Applications - Driver */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-light-blue hover-lift">
+            <div className="mb-4">
+              <h4 className="text-xl font-bold text-primary mb-1">Secondary Applications</h4>
+              <p className="text-gray-600 text-sm">Additional mobile applications or services</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-semibold text-primary mb-2">Driver App Name</label>
+                <input className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" value={form.driverAppName} onChange={e => setForm({ ...form, driverAppName: e.target.value })} />
+              </div>
+              <div className="md:col-span-1">
+                <ImageUpload label="Driver App Logo" value={form.driverAppLogoUrl} file={driverLogoFile} onPick={(f)=>setDriverLogoFile(f)} buttonText="Upload Logo" />
+              </div>
+              <div className="md:col-span-1">
+                <label className="block text-sm font-semibold text-primary mb-2">Driver App Android Link</label>
+                <input className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" placeholder="Play Store URL" value={form.driverAppAndroidLink} onChange={e => setForm({ ...form, driverAppAndroidLink: e.target.value })} />
+              </div>
+              <div className="md:col-span-1">
+                <label className="block text-sm font-semibold text-primary mb-2">Driver App iOS Link</label>
+                <input className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" placeholder="App Store URL" value={form.driverAppIOSLink} onChange={e => setForm({ ...form, driverAppIOSLink: e.target.value })} />
+              </div>
+            </div>
           </div>
 
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Logo</label>
-            <input type="file" accept="image/*" onChange={e => setLogoFile(e.target.files?.[0] || null)} />
-            {logoFile ? (
-              <div className="mt-2 text-xs text-gray-600 break-all">Selected: {logoFile.name}
-                <div className="mt-2">
-                  <img src={URL.createObjectURL(logoFile)} alt="Logo preview" className="h-12 object-contain" />
-                </div>
-              </div>
-            ) : form.logoUrl ? (
-              <div className="mt-2">
-                <img src={form.logoUrl} alt="Logo preview" className="h-12 object-contain" />
-              </div>
-            ) : null}
-          </div>
-
-          {/* Mobile Apps - Customer App */}
-          <div className="md:col-span-2 mt-2">
-            <div className="text-sm font-semibold text-primary">Customer App</div>
-          </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Customer App Name</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.customerAppName} onChange={e => setForm({ ...form, customerAppName: e.target.value })} />
-          </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Customer App Logo</label>
-            <input type="file" accept="image/*" onChange={e => setCustomerLogoFile(e.target.files?.[0] || null)} />
-            {customerLogoFile ? (
-              <div className="mt-2 text-xs text-gray-600 break-all">Selected: {customerLogoFile.name}
-                <div className="mt-2">
-                  <img src={URL.createObjectURL(customerLogoFile)} alt="Customer app logo" className="h-12 object-contain" />
-                </div>
-              </div>
-            ) : form.customerAppLogoUrl ? (
-              <div className="mt-2">
-                <img src={form.customerAppLogoUrl} alt="Customer app logo" className="h-12 object-contain" />
-              </div>
-            ) : null}
-          </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Customer App Android Link</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="Play Store URL" value={form.customerAppAndroidLink} onChange={e => setForm({ ...form, customerAppAndroidLink: e.target.value })} />
-          </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Customer App iOS Link</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="App Store URL" value={form.customerAppIOSLink} onChange={e => setForm({ ...form, customerAppIOSLink: e.target.value })} />
-          </div>
-
-          {/* Mobile Apps - Driver App */}
-          <div className="md:col-span-2 mt-2">
-            <div className="text-sm font-semibold text-primary">Driver App</div>
-          </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Driver App Name</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.driverAppName} onChange={e => setForm({ ...form, driverAppName: e.target.value })} />
-          </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Driver App Logo</label>
-            <input type="file" accept="image/*" onChange={e => setDriverLogoFile(e.target.files?.[0] || null)} />
-            {driverLogoFile ? (
-              <div className="mt-2 text-xs text-gray-600 break-all">Selected: {driverLogoFile.name}
-                <div className="mt-2">
-                  <img src={URL.createObjectURL(driverLogoFile)} alt="Driver app logo" className="h-12 object-contain" />
-                </div>
-              </div>
-            ) : form.driverAppLogoUrl ? (
-              <div className="mt-2">
-                <img src={form.driverAppLogoUrl} alt="Driver app logo" className="h-12 object-contain" />
-              </div>
-            ) : null}
-          </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Driver App Android Link</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="Play Store URL" value={form.driverAppAndroidLink} onChange={e => setForm({ ...form, driverAppAndroidLink: e.target.value })} />
-          </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-primary mb-1">Driver App iOS Link</label>
-            <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" placeholder="App Store URL" value={form.driverAppIOSLink} onChange={e => setForm({ ...form, driverAppIOSLink: e.target.value })} />
-          </div>
-
-          {error && <p className="md:col-span-2 text-sm text-red-600">{error}</p>}
-
-          <div className="md:col-span-2 flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => onClose(false)} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Cancel</button>
-            <button type="submit" disabled={saving} className="login-btn bg-primary text-white px-4 py-2 rounded-md">{saving ? 'Saving...' : 'Save Settings'}</button>
+          <div className="flex justify-center md:justify-end gap-3 pt-2">
+            <button type="button" onClick={() => onClose(false)} className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Cancel</button>
+            <button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:opacity-90 transition-opacity">{saving ? 'Saving...' : 'Save Settings'}</button>
           </div>
         </form>
       </div>

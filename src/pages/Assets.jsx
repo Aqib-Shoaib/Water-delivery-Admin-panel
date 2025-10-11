@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { useAuth } from '../context/AuthContext.jsx'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
@@ -18,15 +19,96 @@ function Modal({ title, children, onClose }) {
   )
 }
 
-function Donut({ value = 0, label = '' }) {
+// Colors for charts
+const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
+
+function Charts({ summary }) {
+  const emptyData = useMemo(() => ([
+    { name: 'Inbound Empty', value: Number(summary.inboundEmpty || 0) },
+    { name: 'Outbound Empty', value: Number(summary.outboundEmpty || 0) },
+    { name: 'In-hand Empty', value: Number(summary.inhandEmpty || 0) },
+    { name: 'Damaged Bottles', value: Number(summary.damagedEmpty || 0) },
+  ]), [summary])
+
+  const dispData = useMemo(() => ([
+    { name: 'Inbound Dispenser', value: Number(summary.inboundDisp || 0) },
+    { name: 'Outbound Dispenser', value: Number(summary.outboundDisp || 0) },
+    { name: 'In-hand Dispenser', value: Number(summary.inhandDisp || 0) },
+    { name: 'Damaged Dispenser', value: Number(summary.damagedDisp || 0) },
+  ]), [summary])
+
+  const miscData = useMemo(() => ([
+    { name: 'Available Products', value: Number(summary.availableProducts || 0) },
+    { name: 'Upcoming Products', value: Number(summary.upcomingProducts || 0) },
+    { name: 'Vendors', value: Number(summary.vendorsCount || 0) },
+  ]), [summary])
+
   return (
-    <div className="p-3 border rounded-md bg-white flex items-center gap-3">
-      <div className="w-12 h-12 rounded-full grid place-items-center border-4 border-blue-100 text-base font-semibold text-primary">
-        {Number(value || 0).toLocaleString()}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="bg-white border rounded-md p-3">
+        <div className="text-sm font-semibold text-primary mb-2">Empty Bottles</div>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              {(() => {
+                const isEmpty = emptyData.every(d => d.value === 0)
+                const chartData = isEmpty ? [{ name: 'No data', value: 1 }] : emptyData
+                return (
+                  <Pie data={chartData} dataKey="value" nameKey="name" outerRadius={90} innerRadius={50} stroke="#fff" strokeWidth={1}>
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-empty-${index}`} fill={isEmpty ? '#e5e7eb' : COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                )
+              })()}
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </div>
-      <div className="text-xs text-gray-600">{label}</div>
+
+      <div className="bg-white border rounded-md p-3">
+        <div className="text-sm font-semibold text-primary mb-2">Dispensers</div>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              {(() => {
+                const isEmpty = dispData.every(d => d.value === 0)
+                const chartData = isEmpty ? [{ name: 'No data', value: 1 }] : dispData
+                return (
+                  <Pie data={chartData} dataKey="value" nameKey="name" outerRadius={90} innerRadius={50} stroke="#fff" strokeWidth={1}>
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-disp-${index}`} fill={isEmpty ? '#e5e7eb' : COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                )
+              })()}
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="bg-white border rounded-md p-3">
+        <div className="text-sm font-semibold text-primary mb-2">Misc</div>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={miscData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-15} textAnchor="end" height={50} />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" name="Count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
-  )}
+  )
+}
 
 export default function Assets() {
   const { token } = useAuth()
@@ -52,13 +134,11 @@ export default function Assets() {
   const [detailRow, setDetailRow] = useState(null)
 
   async function loadSummary() {
-    try {
-      const res = await fetch(`${API_BASE}/api/assets/summary`, { headers })
-      if (res.ok) {
-        const data = await res.json()
-        setSummary(s => ({ ...s, ...data }))
-      }
-    } catch {}
+    const res = await fetch(`${API_BASE}/api/assets/summary`, { headers })
+    if (res.ok) {
+      const data = await res.json()
+      setSummary(s => ({ ...s, ...data }))
+    }
   }
   async function loadStock() {
     setLoading(true)
@@ -77,24 +157,25 @@ export default function Assets() {
     if (!token) return
     loadSummary()
     loadStock()
+    //eslint-disable-next-line
   }, [token])
 
   function showDetail(r) { setDetailRow(r); setOpenDetail(true) }
 
   const filteredRows = useMemo(() => {
     return rows.filter(r => {
-      if (filters.type && String(r.itemType||'').toLowerCase() !== String(filters.type).toLowerCase()) return false
-      if (filters.condition && String(r.itemCondition||'').toLowerCase() !== String(filters.condition).toLowerCase()) return false
-      if (filters.vendor && String(r.vendorName||'').toLowerCase() !== String(filters.vendor).toLowerCase()) return false
+      if (filters.type && String(r.itemType || '').toLowerCase() !== String(filters.type).toLowerCase()) return false
+      if (filters.condition && String(r.itemCondition || '').toLowerCase() !== String(filters.condition).toLowerCase()) return false
+      if (filters.vendor && String(r.vendorName || '').toLowerCase() !== String(filters.vendor).toLowerCase()) return false
       return true
     })
   }, [rows, filters])
 
   function downloadCSV() {
-    const header = ['Item Name','Item Code','QTY','Item Type','Item Condition','Allot To (Depart)','Approved By','Vendor Name']
+    const header = ['Item Name', 'Item Code', 'QTY', 'Item Type', 'Item Condition', 'Allot To (Depart)', 'Approved By', 'Vendor Name']
     const lines = filteredRows.map(r => [
-      r.itemName||'', r.itemCode||'', r.qty??'', r.itemType||'', r.itemCondition||'', r.allotToDepartment||'', r.approvedBy||'', r.vendorName||''
-    ].map(v => `"${String(v).replaceAll('"','""')}"`).join(','))
+      r.itemName || '', r.itemCode || '', r.qty ?? '', r.itemType || '', r.itemCondition || '', r.allotToDepartment || '', r.approvedBy || '', r.vendorName || ''
+    ].map(v => `"${String(v).replaceAll('"', '""')}"`).join(','))
     const csv = [header.join(','), ...lines].join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -114,37 +195,25 @@ export default function Assets() {
         </div>
       </div>
 
-      {/* Donut charts */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        <Donut value={summary.inboundEmpty} label="In-bound Stock (Empty Bottles)" />
-        <Donut value={summary.outboundEmpty} label="Out-bound Stock (Empty Bottles)" />
-        <Donut value={summary.inhandEmpty} label="Total In-hand (Empty Bottles)" />
-        <Donut value={summary.damagedEmpty} label="Total Damaged Bottles" />
-        <Donut value={summary.inboundDisp} label="Total In-bound Dispenser" />
-        <Donut value={summary.outboundDisp} label="Total Out-bound Dispenser" />
-        <Donut value={summary.inhandDisp} label="In-hand Stock (Dispenser)" />
-        <Donut value={summary.damagedDisp} label="Total Damaged Dispenser" />
-        <Donut value={summary.availableProducts} label="Available Products" />
-        <Donut value={summary.upcomingProducts} label="Upcoming Products" />
-        <Donut value={summary.vendorsCount} label="Number of Vendors" />
-      </div>
+      {/* Charts */}
+      <Charts summary={summary} />
 
       {/* Filters */}
       <div className="flex flex-wrap items-end gap-2">
         <label className="text-sm">
           <div className="text-primary mb-1">Item Type</div>
-          <input className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" placeholder="e.g. bottle, dispenser" value={filters.type} onChange={e=>setFilters(s=>({...s,type:e.target.value}))} />
+          <input className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" placeholder="e.g. bottle, dispenser" value={filters.type} onChange={e => setFilters(s => ({ ...s, type: e.target.value }))} />
         </label>
         <label className="text-sm">
           <div className="text-primary mb-1">Condition</div>
-          <input className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" placeholder="e.g. new, used, damaged" value={filters.condition} onChange={e=>setFilters(s=>({...s,condition:e.target.value}))} />
+          <input className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" placeholder="e.g. new, used, damaged" value={filters.condition} onChange={e => setFilters(s => ({ ...s, condition: e.target.value }))} />
         </label>
         <label className="text-sm">
           <div className="text-primary mb-1">Vendor</div>
-          <input className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" placeholder="Vendor name" value={filters.vendor} onChange={e=>setFilters(s=>({...s,vendor:e.target.value}))} />
+          <input className="form-input px-3 py-2 border-2 border-gray-200 rounded-lg" placeholder="Vendor name" value={filters.vendor} onChange={e => setFilters(s => ({ ...s, vendor: e.target.value }))} />
         </label>
         <div className="ml-auto flex gap-2">
-          <button onClick={()=>setFilters({ type:'', condition:'', vendor:'' })} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Reset</button>
+          <button onClick={() => setFilters({ type: '', condition: '', vendor: '' })} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Reset</button>
           <button onClick={downloadCSV} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Download CSV</button>
         </div>
       </div>

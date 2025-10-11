@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import AddUserModal from '../components/modals/AddUserModal.jsx'
 import Customers from './Customers.jsx'
 import Drivers from './Drivers.jsx'
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
@@ -20,6 +21,33 @@ function Modal({ title, children, onClose }) {
           {children}
         </div>
       </div>
+    </div>
+  )
+}
+
+function UploadFileField({ label = 'Upload File', value = '', onChange, onUpload, accept = '*', className = '' }) {
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  async function handleFile(file){
+    if (!file || !onUpload) return
+    setError('')
+    setUploading(true)
+    try {
+      const url = await onUpload(file)
+      onChange?.(url)
+    } catch (e) {
+      setError(e?.message || 'Upload failed')
+    } finally { setUploading(false) }
+  }
+  return (
+    <div className={`text-sm ${className}`}>
+      <div className="text-primary mb-1">{label}</div>
+      <div className="flex items-center gap-2">
+        <input type="file" accept={accept} onChange={e=>handleFile(e.target.files?.[0])} disabled={uploading} />
+        {uploading && <span className="text-xs text-gray-500">Uploading...</span>}
+        {value && !uploading && <a href={value} target="_blank" rel="noreferrer" className="text-xs text-primary underline truncate max-w-[14rem]">{value}</a>}
+      </div>
+      {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
     </div>
   )
 }
@@ -44,6 +72,30 @@ function Textarea({ label, className = '', value, onChange }) {
       <div className="text-primary mb-1">{label}</div>
       <textarea className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue min-h-[90px]" value={value} onChange={e=>onChange(e.target.value)} />
     </label>
+  )
+}
+
+function SearchableUserSelect({ items = [], value = '', onChange, label = 'User', className = '' }) {
+  const [query, setQuery] = useState('')
+  const list = useMemo(() => {
+    const q = (query||'').toLowerCase().trim()
+    if (!q) return items || []
+    return (items||[]).filter(u => {
+      const s = `${u.firstName||''} ${u.lastName||''} ${u.name||''} ${u.email||''} ${u.employeeId||''}`.toLowerCase()
+      return s.includes(q)
+    })
+  }, [items, query])
+  return (
+    <div className={`text-sm ${className}`}>
+      <div className="text-primary mb-1">{label}</div>
+      <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue mb-1" placeholder="Search user..." value={query} onChange={e=>setQuery(e.target.value)} />
+      <select className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={value} onChange={e=>onChange(e.target.value)}>
+        <option value="">Select user</option>
+        {list.map(u => (
+          <option key={u._id} value={u._id}>{u.firstName || u.name || u.email || u._id}</option>
+        ))}
+      </select>
+    </div>
   )
 }
 
@@ -72,6 +124,38 @@ function Donut({ value = 0, label = '' }) {
       </svg>
       <div className="text-xs text-gray-700 max-w-[10rem]">{label}</div>
     </div>
+  )
+}
+
+const COLORS = ['#1d4ed8', '#059669', '#f59e0b', '#ef4444', '#7c3aed', '#0ea5e9', '#14b8a6', '#9333ea']
+
+function ChartCard({ title, children }) {
+  return (
+    <div className="border rounded-md p-3">
+      <div className="text-sm text-gray-600 mb-2">{title}</div>
+      <div className="h-56">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function DonutPie({ data = [], inner = 40, outer = 80, showLegend = false }) {
+  const total = (data || []).reduce((a, b) => a + (Number(b?.value) || 0), 0)
+  const empty = total <= 0
+  const dataToUse = empty ? [{ name: 'No data', value: 1 }] : data
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie data={dataToUse} dataKey="value" nameKey="name" innerRadius={inner} outerRadius={outer} paddingAngle={1}>
+          {dataToUse.map((entry, index) => (
+            <Cell key={`slice-${index}`} fill={empty ? '#e5e7eb' : COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip />
+        {showLegend && <Legend />}
+      </PieChart>
+    </ResponsiveContainer>
   )
 }
 
@@ -112,12 +196,17 @@ export default function Divisions() {
   const headers = useMemo(() => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }), [token])
   const headersAuthOnly = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
 
+  // Time filters
+  const [range, setRange] = useState('month') // day|week|month|year|custom
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+
   // Employee record state
   const [empTotals, setEmpTotals] = useState({ working:0, terminated:0, waiting:0, slips:0, loans:0, leaveSalary:0, dutyResumptions:0, warnings:0, resignations:0, experiences:0 })
   const [empRows, setEmpRows] = useState([])
   const [empLoading, setEmpLoading] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
-  const [selectedUserId, setSelectedUserId] = useState('')
+  
   // Role assignment state
   const [openRoleEdit, setOpenRoleEdit] = useState(false)
   const [roleForm, setRoleForm] = useState({ id:'', role:'', roleName:'', permissionsText:'' })
@@ -204,7 +293,6 @@ export default function Divisions() {
   const [editForm, setEditForm] = useState({ id:'', phone:'', jobTitle:'', department:'', employeeType:'', shiftTimings:'', workLocation:'', basicSalary:'', allowances:'', deductions:'', status:'working', roleName:'' })
 
   function pickUser(id) {
-    setSelectedUserId(id);
     setSlipForm(s => ({ ...s, user: id }));
     setLoanForm(s => ({ ...s, user: id }));
     setLeaveForm(s => ({ ...s, user: id }));
@@ -213,15 +301,22 @@ export default function Divisions() {
     setExperienceForm(s => ({ ...s, user: id }));
   }
 
-  async function loadHolidays(){
+  const loadHolidays = useCallback(async () => {
     setHolidayLoading(true)
     try {
-      const params = computeRangeParams()
+      const now = new Date()
+      const end = new Date(now)
+      const start = new Date(now)
+      if (range === 'day') start.setDate(now.getDate()-1)
+      if (range === 'week') start.setDate(now.getDate()-7)
+      if (range === 'month') start.setMonth(now.getMonth()-1)
+      if (range === 'year') start.setFullYear(now.getFullYear()-1)
+      const params = range !== 'custom' ? { from: start.toISOString(), to: end.toISOString() } : { from, to }
       const qs = new URLSearchParams(Object.entries(params).filter(([,v])=>v)).toString()
       const res = await fetch(`${API_BASE}/api/holidays${qs?`?${qs}`:''}`, { headers })
       if (res.ok) setHolidays(await res.json())
-    } catch {} finally { setHolidayLoading(false) }
-  }
+    } catch (e) { console.error(e) } finally { setHolidayLoading(false) }
+  }, [headers, range, from, to])
 
   function downloadAttendanceCSV() {
     const chartPairs = [
@@ -350,13 +445,8 @@ export default function Divisions() {
     } catch (e) { alert(e.message) } finally { setDetailsLoading(false) }
   }
 
-  // Time filters
-  const [range, setRange] = useState('month') // day|week|month|year|custom
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
-
-  function computeRangeParams() {
-    if (range !== 'custom') {
+  const loadEmployeeTotals = useCallback(async () => {
+    try {
       const now = new Date()
       const end = new Date(now)
       const start = new Date(now)
@@ -364,20 +454,13 @@ export default function Divisions() {
       if (range === 'week') start.setDate(now.getDate()-7)
       if (range === 'month') start.setMonth(now.getMonth()-1)
       if (range === 'year') start.setFullYear(now.getFullYear()-1)
-      return { from: start.toISOString(), to: end.toISOString() }
-    }
-    return { from, to }
-  }
-
-  async function loadEmployeeTotals() {
-    try {
-      const params = computeRangeParams()
+      const params = range !== 'custom' ? { from: start.toISOString(), to: end.toISOString() } : { from, to }
       const qs = new URLSearchParams(Object.entries(params).filter(([,v])=>v)).toString()
       const res = await fetch(`${API_BASE}/api/employee-analytics/totals${qs?`?${qs}`:''}`, { headers })
       if (res.ok) setEmpTotals(await res.json())
-    } catch {}
-  }
-  async function loadEmployees() {
+    } catch (e) { console.error(e) }
+  }, [headers, range, from, to])
+  const loadEmployees = useCallback(async () => {
     setEmpLoading(true)
     try {
       const res = await fetch(`${API_BASE}/api/admin/users?role=driver,admin,customer`, { headers })
@@ -385,8 +468,8 @@ export default function Divisions() {
         const data = await res.json()
         setEmpRows(Array.isArray(data?.users) ? data.users : data)
       }
-    } catch {} finally { setEmpLoading(false) }
-  }
+    } catch (e) { console.error(e) } finally { setEmpLoading(false) }
+  }, [headers])
 
   // Attendance state
   const [attTotals, setAttTotals] = useState({ workingEmployees:0, workingDays:0, workHours:0, offDays:0, offHours:0, overtimeHours:0, publicHolidays:0, absents:0, medicalLeave:0 })
@@ -415,10 +498,17 @@ export default function Divisions() {
 
   // (removed) supervisors state; using employee list for role assignment
 
-  async function loadAttendance() {
+  const loadAttendance = useCallback(async () => {
     setAttLoading(true)
     try {
-      const params = computeRangeParams()
+      const now = new Date()
+      const end = new Date(now)
+      const start = new Date(now)
+      if (range === 'day') start.setDate(now.getDate()-1)
+      if (range === 'week') start.setDate(now.getDate()-7)
+      if (range === 'month') start.setMonth(now.getMonth()-1)
+      if (range === 'year') start.setFullYear(now.getFullYear()-1)
+      const params = range !== 'custom' ? { from: start.toISOString(), to: end.toISOString() } : { from, to }
       const qs = new URLSearchParams(Object.entries(params).filter(([,v])=>v)).toString()
       const [tRes, rRes] = await Promise.all([
         fetch(`${API_BASE}/api/attendance-analytics/totals${qs?`?${qs}`:''}`, { headers }),
@@ -429,12 +519,19 @@ export default function Divisions() {
         const data = await rRes.json()
         setAttRows(Array.isArray(data?.rows) ? data.rows : [])
       }
-    } catch {} finally { setAttLoading(false) }
-  }
-  async function loadPayments() {
+    } catch (e) { console.error(e) } finally { setAttLoading(false) }
+  }, [headers, range, from, to])
+  const loadPayments = useCallback(async () => {
     setPayLoading(true)
     try {
-      const params = computeRangeParams()
+      const now = new Date()
+      const end = new Date(now)
+      const start = new Date(now)
+      if (range === 'day') start.setDate(now.getDate()-1)
+      if (range === 'week') start.setDate(now.getDate()-7)
+      if (range === 'month') start.setMonth(now.getMonth()-1)
+      if (range === 'year') start.setFullYear(now.getFullYear()-1)
+      const params = range !== 'custom' ? { from: start.toISOString(), to: end.toISOString() } : { from, to }
       const qs = new URLSearchParams(Object.entries(params).filter(([,v])=>v)).toString()
       const [tRes, rRes] = await Promise.all([
         fetch(`${API_BASE}/api/payments-analytics/totals${qs?`?${qs}`:''}`, { headers }),
@@ -444,8 +541,8 @@ export default function Divisions() {
       if (rRes.ok) {
         const data = await rRes.json(); setPayRows(Array.isArray(data?.rows)?data.rows:[])
       }
-    } catch {} finally { setPayLoading(false) }
-  }
+    } catch (e) { console.error(e) } finally { setPayLoading(false) }
+  }, [headers, range, from, to])
 
   function showPayDetails(row){ setPayDetailsRow(row); setOpenPayDetails(true) }
 
@@ -507,14 +604,14 @@ export default function Divisions() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
-  async function loadSlips() {
+  const loadSlips = useCallback(async () => {
     setSlipLoading(true)
     try {
       const res = await fetch(`${API_BASE}/api/salary-slips`, { headers })
       if (!res.ok) throw new Error('Failed')
       setSlipItems(await res.json())
-    } catch {} finally { setSlipLoading(false) }
-  }
+    } catch (e) { console.error(e) } finally { setSlipLoading(false) }
+  }, [headers])
   // (removed) loadSupervisors; role assignment uses users list only
 
   useEffect(() => {
@@ -524,7 +621,7 @@ export default function Divisions() {
     if (adminTab === 'payments-summary') loadPayments()
     if (adminTab === 'salary-slip') loadSlips()
     if (adminTab === 'supervisor-assignment') loadEmployees()
-  }, [token, mainTab, adminTab])
+  }, [token, mainTab, adminTab, loadEmployeeTotals, loadEmployees, loadAttendance, loadHolidays, loadPayments, loadSlips])
 
   return (
     <div className="space-y-6">
@@ -589,22 +686,25 @@ export default function Divisions() {
                     <Button onClick={loadEmployeeTotals}>Apply</Button>
                   </div>
 
-                  {/* Donut charts */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {[
-                      { k:'working', label:'Working Employees' },
-                      { k:'terminated', label:'Terminated' },
-                      { k:'waiting', label:'Waiting List' },
-                      { k:'slips', label:'Issued Salary Slips' },
-                      { k:'loans', label:'Issued Loans' },
-                      { k:'leaveSalary', label:'Leave Salary Issued' },
-                      { k:'dutyResumptions', label:'Duty Resumption Recv.' },
-                      { k:'warnings', label:'Warning Letters' },
-                      { k:'resignations', label:'Resignations' },
-                      { k:'experiences', label:'Experience Letters' },
-                    ].map((c,i)=> (
-                      <Donut key={i} value={empTotals[c.k]||0} label={c.label} />
-                    ))}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <ChartCard title="Employee Status">
+                      <DonutPie showLegend data={[
+                        { name: 'Working', value: empTotals.working||empTotals.workingEmployees||0 },
+                        { name: 'Terminated', value: empTotals.terminated||0 },
+                        { name: 'Waiting', value: empTotals.waiting||0 },
+                      ]} />
+                    </ChartCard>
+                    <ChartCard title="HR Actions Issued">
+                      <DonutPie showLegend data={[
+                        { name: 'Salary Slips', value: empTotals.slips||0 },
+                        { name: 'Loans', value: empTotals.loans||0 },
+                        { name: 'Leave Salary', value: empTotals.leaveSalary||0 },
+                        { name: 'Duty Resumption', value: empTotals.dutyResumptions||0 },
+                        { name: 'Warnings', value: empTotals.warnings||0 },
+                        { name: 'Resignations', value: empTotals.resignations||0 },
+                        { name: 'Experience Letters', value: empTotals.experiences||0 },
+                      ]} />
+                    </ChartCard>
                   </div>
 
                   {/* Employee table (condensed) */}
@@ -713,7 +813,7 @@ export default function Divisions() {
                         <Input type="number" label="Deductions" value={slipForm.deductions} onChange={v=>setSlipForm({...slipForm,deductions:v})} />
                         <Input type="number" label="Net" value={slipForm.net} onChange={v=>setSlipForm({...slipForm,net:v})} />
                         <Input label="File URL" value={slipForm.fileUrl} onChange={v=>setSlipForm({...slipForm,fileUrl:v})} className="md:col-span-2" />
-                        <label className="text-sm md:col-span-3"><div className="text-primary mb-1">Upload File</div><input type="file" onChange={async(e)=>{ const f=e.target.files?.[0]; if(f){ try{ const url=await uploadFileReturnUrl(f); setSlipForm(s=>({...s,fileUrl:url})) }catch(err){ alert(err.message) } } }} /></label>
+                        <UploadFileField className="md:col-span-3" label="Upload File" value={slipForm.fileUrl} onChange={(url)=>setSlipForm(s=>({...s,fileUrl:url}))} onUpload={uploadFileReturnUrl} />
                         <Input label="Notes" value={slipForm.notes} onChange={v=>setSlipForm({...slipForm,notes:v})} className="md:col-span-3" />
                         <div className="md:col-span-3 flex justify-end gap-2"><Button type="button" onClick={()=>setOpenSlip(false)}>Cancel</Button><Button type="submit" primary>Create</Button></div>
                       </form>
@@ -763,7 +863,7 @@ export default function Divisions() {
                         <Input label="Subject" value={warningForm.subject} onChange={v=>setWarningForm({...warningForm,subject:v})} className="md:col-span-2" />
                         <Textarea label="Description" value={warningForm.description} onChange={v=>setWarningForm({...warningForm,description:v})} className="md:col-span-2" />
                         <Input label="File URL" value={warningForm.fileUrl} onChange={v=>setWarningForm({...warningForm,fileUrl:v})} className="md:col-span-2" />
-                        <label className="text-sm md:col-span-2"><div className="text-primary mb-1">Upload File</div><input type="file" onChange={async(e)=>{ const f=e.target.files?.[0]; if(f){ try{ const url=await uploadFileReturnUrl(f); setWarningForm(s=>({...s,fileUrl:url})) }catch(err){ alert(err.message) } } }} /></label>
+                        <UploadFileField className="md:col-span-2" label="Upload File" value={warningForm.fileUrl} onChange={(url)=>setWarningForm(s=>({...s,fileUrl:url}))} onUpload={uploadFileReturnUrl} />
                         <div className="md:col-span-2 flex justify-end gap-2"><Button type="button" onClick={()=>setOpenWarning(false)}>Cancel</Button><Button type="submit" primary>Issue</Button></div>
                       </form>
                     </Modal>
@@ -781,7 +881,7 @@ export default function Divisions() {
                         <Textarea label="Reason" value={resignationForm.reason} onChange={v=>setResignationForm({...resignationForm,reason:v})} className="md:col-span-2" />
                         <Input type="number" label="Final Settlement" value={resignationForm.finalSettlement} onChange={v=>setResignationForm({...resignationForm,finalSettlement:v})} />
                         <Input label="File URL" value={resignationForm.fileUrl} onChange={v=>setResignationForm({...resignationForm,fileUrl:v})} />
-                        <label className="text-sm"><div className="text-primary mb-1">Upload File</div><input type="file" onChange={async(e)=>{ const f=e.target.files?.[0]; if(f){ try{ const url=await uploadFileReturnUrl(f); setResignationForm(s=>({...s,fileUrl:url})) }catch(err){ alert(err.message) } } }} /></label>
+                        <UploadFileField label="Upload File" value={resignationForm.fileUrl} onChange={(url)=>setResignationForm(s=>({...s,fileUrl:url}))} onUpload={uploadFileReturnUrl} />
                         <div className="md:col-span-2 flex justify-end gap-2"><Button type="button" onClick={()=>setOpenResignation(false)}>Cancel</Button><Button type="submit" primary>Save</Button></div>
                       </form>
                     </Modal>
@@ -797,7 +897,7 @@ export default function Divisions() {
                         <Input type="date" label="Date" value={experienceForm.date} onChange={v=>setExperienceForm({...experienceForm,date:v})} />
                         <Input label="Company Name" value={experienceForm.companyName} onChange={v=>setExperienceForm({...experienceForm,companyName:v})} />
                         <Input label="File URL" value={experienceForm.fileUrl} onChange={v=>setExperienceForm({...experienceForm,fileUrl:v})} />
-                        <label className="text-sm"><div className="text-primary mb-1">Upload File</div><input type="file" onChange={async(e)=>{ const f=e.target.files?.[0]; if(f){ try{ const url=await uploadFileReturnUrl(f); setExperienceForm(s=>({...s,fileUrl:url})) }catch(err){ alert(err.message) } } }} /></label>
+                        <UploadFileField label="Upload File" value={experienceForm.fileUrl} onChange={(url)=>setExperienceForm(s=>({...s,fileUrl:url}))} onUpload={uploadFileReturnUrl} />
                         <Textarea label="Remarks" value={experienceForm.remarks} onChange={v=>setExperienceForm({...experienceForm,remarks:v})} className="md:col-span-2" />
                         <div className="md:col-span-2 flex justify-end gap-2"><Button type="button" onClick={()=>setOpenExperience(false)}>Cancel</Button><Button type="submit" primary>Issue</Button></div>
                       </form>
@@ -873,17 +973,23 @@ export default function Divisions() {
                     <Button onClick={loadAttendance}>Apply</Button>
                   </div>
 
-                  {/* Donut charts */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <Donut value={attTotals.workingEmployees||0} label="Working Employees" />
-                    <Donut value={attTotals.workingDays||0} label="Total Working Days" />
-                    <Donut value={attTotals.workHours||0} label="Total Working Hours" />
-                    <Donut value={attTotals.offDays||0} label="Total Off Days" />
-                    <Donut value={attTotals.offHours||0} label="Total Off Hours" />
-                    <Donut value={attTotals.overtimeHours||0} label="Total Overtime Hours" />
-                    <Donut value={attTotals.publicHolidays||0} label="Public Holidays" />
-                    <Donut value={attTotals.absents||0} label="Absences" />
-                    <Donut value={attTotals.medicalLeave||0} label="Medical Leave" />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <ChartCard title="Hours Distribution">
+                      <DonutPie showLegend data={[
+                        { name: 'Work Hours', value: attTotals.workHours||0 },
+                        { name: 'Off Hours', value: attTotals.offHours||0 },
+                        { name: 'Overtime Hours', value: attTotals.overtimeHours||0 },
+                      ]} />
+                    </ChartCard>
+                    <ChartCard title="Days Distribution">
+                      <DonutPie showLegend data={[
+                        { name: 'Working Days', value: attTotals.workingDays||0 },
+                        { name: 'Off Days', value: attTotals.offDays||0 },
+                        { name: 'Public Holidays', value: attTotals.publicHolidays||0 },
+                        { name: 'Absences', value: attTotals.absents||0 },
+                        { name: 'Medical Leave', value: attTotals.medicalLeave||0 },
+                      ]} />
+                    </ChartCard>
                   </div>
 
                   {/* Per-user table (condensed) */}
@@ -1007,13 +1113,19 @@ export default function Divisions() {
                     <Button onClick={loadPayments}>Apply</Button>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <Donut value={payTotals.employeeCount||0} label="Total Employees" />
-                    <Donut value={payTotals.totalLoanApplications||0} label="Loan Applications" />
-                    <Donut value={payTotals.approvedLoans||0} label="Approved Loans" />
-                    <Donut value={payTotals.pendingLoans||0} label="Pending Applications" />
-                    <Donut value={payTotals.rejectedLoans||0} label="Rejected Applications" />
-                    <Donut value={payTotals.totalPaidAmount||0} label="Total Paid Amount" />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <ChartCard title="Loan Applications Status">
+                      <DonutPie showLegend data={[
+                        { name: 'Approved', value: payTotals.approvedLoans||0 },
+                        { name: 'Pending', value: payTotals.pendingLoans||0 },
+                        { name: 'Rejected', value: payTotals.rejectedLoans||0 },
+                      ]} />
+                    </ChartCard>
+                    <ChartCard title="Applications Volume">
+                      <DonutPie showLegend data={[
+                        { name: 'Total Applications', value: payTotals.totalLoanApplications||0 },
+                      ]} />
+                    </ChartCard>
                   </div>
 
                   <div className="overflow-x-auto border rounded-md">
@@ -1189,13 +1301,16 @@ export default function Divisions() {
                     </div>
                   </div>
 
-                  {/* Donut charts */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <Donut value={roleCounts.working||0} label="Working Employees" />
-                    <Donut value={roleCounts.executive||0} label="Executive Users" />
-                    <Donut value={roleCounts.staff||0} label="Staff Users" />
-                    <Donut value={roleCounts.vendor||0} label="Vendor Users" />
-                    <Donut value={roleCounts.driver||0} label="Drivers" />
+                  <div className="grid grid-cols-1 gap-4">
+                    <ChartCard title="Users by Role">
+                      <DonutPie showLegend data={[
+                        { name: 'Working', value: roleCounts.working||0 },
+                        { name: 'Executive', value: roleCounts.executive||0 },
+                        { name: 'Staff', value: roleCounts.staff||0 },
+                        { name: 'Vendor', value: roleCounts.vendor||0 },
+                        { name: 'Driver', value: roleCounts.driver||0 },
+                      ]} />
+                    </ChartCard>
                   </div>
 
                   {/* Users table */}

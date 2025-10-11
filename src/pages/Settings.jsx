@@ -11,11 +11,11 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
-      <Card className="p-4">
+      <Card className="p-4 border-l-4 border-primary">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-primary">Site Settings</h2>
-            <p className="text-xs text-gray-500">Manage site branding and contact information</p>
+            <h2 className="text-xl font-semibold text-primary">Site Settings</h2>
+            <p className="text-base text-gray-500">Manage site branding and contact information</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={refresh} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Refresh</button>
@@ -30,30 +30,53 @@ export default function Settings() {
         ) : (
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <div className="text-sm"><span className="font-medium text-primary">Site Name:</span> {settings?.siteName || '—'}</div>
-              <div className="text-sm"><span className="font-medium text-primary">Contact Emails:</span> {(settings?.emails && settings.emails.length)
-                ? settings.emails.join(', ')
-                : (settings?.contactEmail || '—')}</div>
-              <div className="text-sm"><span className="font-medium text-primary">Phones:</span> {(settings?.phones && settings.phones.length)
-                ? settings.phones.join(', ')
-                : (settings?.contactPhone || '—')}</div>
-              <div className="text-sm"><span className="font-medium text-primary">Address:</span> {settings?.address || '—'}</div>
-              <div className="text-sm"><span className="font-medium text-primary">WhatsApp Link:</span> {settings?.whatsappLink ? <a className="text-medium-blue underline" href={settings.whatsappLink} target="_blank" rel="noreferrer">{settings.whatsappLink}</a> : '—'}</div>
+              <div className="text-base">
+                <span className="font-medium text-primary">Site Name:</span> {settings?.siteName || '—'}
+              </div>
+              <div className="text-base">
+                <span className="font-medium text-primary">Contact Emails:</span> 
+                <div className="flex flex-col gap-2 my-2">
+                  {(settings?.emails && settings.emails.length)
+                  ? settings.emails.map((email, index) => (
+                      <span key={index} className="px-2 py-1 text-sm rounded-md border border-gray-300">{email}</span>
+                    ))
+                  : (settings?.contactEmail || '—')}
+                </div>
+              </div>
+              <div className="text-base">
+                <span className="font-medium text-primary">Phones:</span> 
+                <div className="flex flex-col gap-2 my-2">
+                  {(settings?.phones && settings.phones.length)
+                  ? settings.phones.map((phone, index) => (
+                      <span key={index} className="px-2 py-1 text-sm rounded-md border border-gray-300">{phone}</span>
+                    ))
+                  : (settings?.contactPhone || '—')}
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-sm font-medium text-primary mb-1">Logo</div>
+            <div className='flex flex-col gap-2 items-center justify-center'>
+              <p className="text-base font-medium text-primary mb-1">Logo</p>
+              <div className='w-20 h-20' >
               {settings?.logoUrl ? (
-                <img src={settings.logoUrl} alt="Logo" className="h-14 object-contain" />
+                <img src={settings.logoUrl} alt="Logo" className="h-full w-full object-contain" />
               ) : (
-                <div className="h-14 w-28 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 text-xs">No logo</div>
+                <div className="h-full w-full border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 text-xs">No logo</div>
               )}
+              </div>
+              <div className="text-base">
+                <span className="font-medium text-primary">Address:</span>
+                 {settings?.address || '—'}</div>
+              <div className="text-base">
+                <span className="font-medium text-primary">WhatsApp Link:</span>
+                 {settings?.whatsappLink ? <a className="text-medium-blue underline" href={settings.whatsappLink} target="_blank" rel="noreferrer">{settings.whatsappLink}</a> : '—'}
+              </div>
             </div>
           </div>
         )}
       </Card>
 
       {/* Mobile Apps - Customer App */}
-      <Card className="p-4">
+      <Card className="p-4 border-l-4 border-medium-blue">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-primary">Customer App</h2>
@@ -62,12 +85,12 @@ export default function Settings() {
         </div>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <div className="text-sm"><span className="font-medium text-primary">Name:</span> {settings?.customerAppName || '—'}</div>
-            <div className="text-sm"><span className="font-medium text-primary">Android Link:</span> {settings?.customerAppAndroidLink ? <a className="text-medium-blue underline" href={settings.customerAppAndroidLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
-            <div className="text-sm"><span className="font-medium text-primary">iOS Link:</span> {settings?.customerAppIOSLink ? <a className="text-medium-blue underline" href={settings.customerAppIOSLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
+            <div className="text-base"><span className="font-medium text-primary">Name:</span> {settings?.customerAppName || '—'}</div>
+            <div className="text-base"><span className="font-medium text-primary">Android Link:</span> {settings?.customerAppAndroidLink ? <a className="text-medium-blue underline" href={settings.customerAppAndroidLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
+            <div className="text-base"><span className="font-medium text-primary">iOS Link:</span> {settings?.customerAppIOSLink ? <a className="text-medium-blue underline" href={settings.customerAppIOSLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
           </div>
           <div>
-            <div className="text-sm font-medium text-primary mb-1">Logo</div>
+            <div className="text-base font-medium text-primary mb-1">Logo</div>
             {settings?.customerAppLogoUrl ? (
               <img src={settings.customerAppLogoUrl} alt="Customer App Logo" className="h-14 object-contain" />
             ) : (
@@ -78,7 +101,7 @@ export default function Settings() {
       </Card>
 
       {/* Mobile Apps - Driver App */}
-      <Card className="p-4">
+      <Card className="p-4 border-l-4 border-light-blue">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-primary">Driver App</h2>
@@ -87,12 +110,12 @@ export default function Settings() {
         </div>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <div className="text-sm"><span className="font-medium text-primary">Name:</span> {settings?.driverAppName || '—'}</div>
-            <div className="text-sm"><span className="font-medium text-primary">Android Link:</span> {settings?.driverAppAndroidLink ? <a className="text-medium-blue underline" href={settings.driverAppAndroidLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
-            <div className="text-sm"><span className="font-medium text-primary">iOS Link:</span> {settings?.driverAppIOSLink ? <a className="text-medium-blue underline" href={settings.driverAppIOSLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
+            <div className="text-base"><span className="font-medium text-primary">Name:</span> {settings?.driverAppName || '—'}</div>
+            <div className="text-base"><span className="font-medium text-primary">Android Link:</span> {settings?.driverAppAndroidLink ? <a className="text-medium-blue underline" href={settings.driverAppAndroidLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
+            <div className="text-base"><span className="font-medium text-primary">iOS Link:</span> {settings?.driverAppIOSLink ? <a className="text-medium-blue underline" href={settings.driverAppIOSLink} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
           </div>
           <div>
-            <div className="text-sm font-medium text-primary mb-1">Logo</div>
+            <div className="text-base font-medium text-primary mb-1">Logo</div>
             {settings?.driverAppLogoUrl ? (
               <img src={settings.driverAppLogoUrl} alt="Driver App Logo" className="h-14 object-contain" />
             ) : (

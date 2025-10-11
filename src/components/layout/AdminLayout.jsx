@@ -15,7 +15,7 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="h-screen w-screen bg-gray-50 text-gray-900 grid grid-cols-[250px_1fr] overflow-hidden">
-      <Sidebar open={open} onClose={() => setOpen(false)} settings={settings} />
+      <Sidebar settings={settings} />
 
       <div className="grid grid-rows-[auto_1fr] h-screen">
         <Topbar onMenu={() => setOpen(true)} onRequestLogout={() => setShowLogoutConfirm(true)} settings={settings} />
