@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import TableControls from '../components/ui/TableControls.jsx'
 import useTableControls from '../hooks/useTableControls'
+import Button from '../components/ui/Button.jsx'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
@@ -48,21 +49,21 @@ export default function Invoices() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Invoices</h2>
-        <button onClick={() => load(page)} className="px-3 py-2 text-sm rounded-md border">Refresh</button>
+        <Button variant="secondary" onClick={() => load(page)}>Refresh</Button>
       </div>
 
       {error && <div className="text-sm text-red-600">{error}</div>}
 
-      <div className="bg-white border rounded-lg p-4">
+      <div className="bg-white shadow rounded-lg p-4">
         {loading ? (
           <div className="py-10 text-center text-gray-500">Loading...</div>
         ) : (
           <>
             <TableControls controls={controls} className="mb-3" />
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto bg-white shadow rounded-md">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="text-left border-b">
+                  <tr className="text-left bg-gray-50">
                     <th className="py-2 pr-4">Number</th>
                     <th className="py-2 pr-4">Order</th>
                     <th className="py-2 pr-4">Customer</th>
@@ -73,7 +74,7 @@ export default function Invoices() {
                 </thead>
                 <tbody>
                   {view.map(inv => (
-                    <tr key={inv._id} className="border-b last:border-b-0">
+                    <tr key={inv._id} className="hover:bg-gray-50">
                       <td className="py-2 pr-4">{inv.number}</td>
                       <td className="py-2 pr-4">{inv.order?._id || '—'}<div className="text-xs text-gray-500">{inv.order?.status}</div></td>
                       <td className="py-2 pr-4">{inv.customer?.name || inv.order?.customer?.name || '—'}<div className="text-xs text-gray-500">{inv.customer?.email || inv.order?.customer?.email}</div></td>
@@ -81,7 +82,7 @@ export default function Invoices() {
                       <td className="py-2 pr-4">{inv.status}</td>
                       <td className="py-2 pr-4">
                         {inv.status !== 'paid' && (
-                          <button onClick={() => markPaid(inv)} className="px-3 py-1.5 text-sm rounded-md border hover:bg-gray-50">Mark Paid</button>
+                          <Button variant="secondary" onClick={() => markPaid(inv)}>Mark Paid</Button>
                         )}
                       </td>
                     </tr>

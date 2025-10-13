@@ -34,8 +34,7 @@ function RequireAuth({ children }) {
 function RequireAdmin({ children }) {
   const { isAuthed, user, logout } = useAuth()
   if (!isAuthed) return <Login />
-
-  if (user?.role === 'admin' || user?.role === 'superadmin') return children
+  if (user?.role === 'superadmin') return children
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h2 className="text-xl font-semibold">Not authorized</h2>

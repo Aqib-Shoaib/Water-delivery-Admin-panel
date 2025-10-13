@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { useAuth } from '../context/AuthContext.jsx'
-import AddUserModal from '../components/modals/AddUserModal.jsx'
-import Customers from './Customers.jsx'
-import Drivers from './Drivers.jsx'
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+ import React, { useEffect, useMemo, useState, useCallback } from 'react'
+ import { useSearchParams } from 'react-router-dom'
+ import { useAuth } from '../context/AuthContext.jsx'
+ import AddUserModal from '../components/modals/AddUserModal.jsx'
+ import Customers from './Customers.jsx'
+ import Drivers from './Drivers.jsx'
+ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
@@ -161,11 +162,15 @@ function DonutPie({ data = [], inner = 40, outer = 80, showLegend = false }) {
 
 function Tabs({ tabs, value, onChange }) {
   return (
-    <div className="flex flex-wrap gap-2 border-b border-gray-200">
+    <div className="flex flex-wrap gap-2">
       {tabs.map(t => (
         <button
           key={t.value}
-          className={`px-3 py-2 text-sm rounded-t-md border ${value===t.value ? 'bg-white border-gray-200 border-b-white text-primary' : 'bg-gray-50 border-transparent text-gray-700 hover:bg-gray-100'}`}
+          className={`px-3 py-2 text-base font-medium tracking-wide rounded-md transition ${
+            value===t.value
+              ? 'bg-white text-primary shadow-md'
+              : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow'
+          }`}
           onClick={() => onChange(t.value)}
         >
           {t.label}
@@ -189,12 +194,23 @@ function AdminSubtabs({ value, onChange }) {
 
 export default function Divisions() {
   const { token, hasPermission } = useAuth()
-  const [mainTab, setMainTab] = useState('admin') // admin | customer | staff
+  const [searchParams, setSearchParams] = useSearchParams()
+  const mainTab = useMemo(() => {
+    const t = (searchParams.get('tab') || '').toLowerCase()
+    return ['admin','customer','staff'].includes(t) ? t : 'admin'
+  }, [searchParams]) // admin | customer | staff
   const [adminTab, setAdminTab] = useState('employee-record')
   const [customerTab, setCustomerTab] = useState('customers') // future: add more
   const [staffTab, setStaffTab] = useState('drivers') // future: add more
   const headers = useMemo(() => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }), [token])
   const headersAuthOnly = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
+
+  // Change main tab by updating URL
+  const setMainTab = useCallback((tab) => {
+    const sp = new URLSearchParams(searchParams)
+    sp.set('tab', tab)
+    setSearchParams(sp)
+  }, [searchParams, setSearchParams])
 
   // Time filters
   const [range, setRange] = useState('month') // day|week|month|year|custom
@@ -634,14 +650,14 @@ export default function Divisions() {
       <Tabs
         tabs={[
           { value: 'admin', label: 'Admin' },
-          { value: 'customer', label: 'Customer' },
           { value: 'staff', label: 'Staff' },
+          { value: 'customer', label: 'Customer' },
         ]}
         value={mainTab}
         onChange={setMainTab}
       />
 
-      <div className="bg-white border border-gray-200 rounded-b-md p-4">
+      <div className="bg-white rounded-b-md p-4 shadow-md">
         {mainTab === 'admin' && (
           <div className="space-y-4">
             <AdminSubtabs value={adminTab} onChange={setAdminTab} />

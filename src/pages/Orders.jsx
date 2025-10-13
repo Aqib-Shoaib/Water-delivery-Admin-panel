@@ -20,12 +20,13 @@ export default function Orders() {
   const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token])
 
   const load = async () => {
+    if (!token) return
     setLoading(true)
     setError('')
     try {
       const [ordersRes, usersRes] = await Promise.all([
-        fetch(`${API_BASE}/api/orders`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_BASE}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/api/orders`, { headers: authHeaders }),
+        fetch(`${API_BASE}/api/admin/users`, { headers: authHeaders }),
       ])
       if (!ordersRes.ok) throw new Error(`Orders HTTP ${ordersRes.status}`)
       if (!usersRes.ok) throw new Error(`Users HTTP ${usersRes.status}`)
@@ -41,7 +42,7 @@ export default function Orders() {
   }
 
   useEffect(() => { load() // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [token])
 
   const updateOrder = async (id, patch) => {
     setUpdatingId(id)
@@ -71,10 +72,10 @@ export default function Orders() {
           <div className="mt-2">
             <>
               <TableControls controls={controls} className="mb-3" />
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto bg-white shadow rounded-md">
                 <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-left border-b">
+                <tr className="text-left bg-gray-50">
                   <th className="py-2 pr-4">Created</th>
                   <th className="py-2 pr-4">Customer</th>
                   <th className="py-2 pr-4">Items</th>
@@ -87,7 +88,7 @@ export default function Orders() {
               </thead>
               <tbody>
                 {view.map(o => (
-                  <tr key={o._id} className="border-b last:border-b-0 align-top">
+                  <tr key={o._id} className="align-top hover:bg-gray-50">
                     <td className="py-2 pr-4 whitespace-nowrap">{new Date(o.createdAt || o._id?.toString()?.substring(0,8) * 1000).toLocaleString()}</td>
                     <td className="py-2 pr-4">{o.customer?.name || '—'}<div className="text-xs text-gray-500">{o.customer?.email}</div></td>
                     <td className="py-2 pr-4">

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import ImageUpload from '../ui/ImageUpload.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
+import { PhoneInput } from 'react-international-phone'
+import 'react-international-phone/style.css'
 
 export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
   const { token } = useAuth()
@@ -190,10 +192,19 @@ export default function SiteSettingsModal({ open, onClose, apiBase, initial }) {
                 <div className="space-y-2">
                   {(form.phones || []).map((ph, idx) => (
                     <div key={idx} className="flex gap-2">
-                      <input className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-medium-blue focus:outline-none transition-colors" placeholder="e.g. +1234567890" value={ph}
-                             onChange={e => {
-                               const phones = [...form.phones]; phones[idx] = e.target.value; setForm({ ...form, phones })
-                             }} />
+                      <div className="w-full">
+                        <PhoneInput
+                          defaultCountry="pk"
+                          value={ph || ''}
+                          onChange={(value) => {
+                            const phones = [...(form.phones || [])]
+                            phones[idx] = value
+                            setForm({ ...form, phones })
+                          }}
+                          placeholder="e.g. +92 300 1234567"
+                          className="w-full"
+                        />
+                      </div>
                       <button type="button" className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
                               onClick={() => setForm({ ...form, phones: form.phones.filter((_, i) => i !== idx) })}>Remove</button>
                     </div>

@@ -9,6 +9,7 @@ export default function EditProductModal({ open, onClose, onSaved, apiBase, prod
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (product) {
@@ -59,6 +60,21 @@ export default function EditProductModal({ open, onClose, onSaved, apiBase, prod
     } catch (e) { setError(e.message) } finally { setLoading(false) }
   }
 
+  async function onDelete() {
+    if (!product?._id) return
+    if (!window.confirm('Delete this product?')) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`${apiBase}/api/products/${product._id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      onSaved && onSaved()
+      onClose()
+    } catch (e) { setError(e.message) } finally { setDeleting(false) }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -103,9 +119,12 @@ export default function EditProductModal({ open, onClose, onSaved, apiBase, prod
             )}
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Cancel</button>
-            <button type="submit" disabled={loading} className="login-btn bg-primary text-white px-4 py-2 rounded-md">{loading ? 'Saving...' : 'Save'}</button>
+          <div className="flex justify-between gap-2 pt-2">
+            <button type="button" onClick={onDelete} disabled={deleting} className="px-3 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">{deleting ? 'Deleting...' : 'Delete'}</button>
+            <div className="flex gap-2">
+              <button type="button" onClick={onClose} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Cancel</button>
+              <button type="submit" disabled={loading} className="login-btn bg-primary text-white px-4 py-2 rounded-md">{loading ? 'Saving...' : 'Save'}</button>
+            </div>
           </div>
         </form>
       </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useContext, useMemo, useState } from 'react'
 
 const AuthContext = createContext(null)
 
@@ -36,15 +36,18 @@ export function AuthProvider({ children }) {
     return r === role.toLowerCase()
   }
   const hasPermission = (perm) => {
-    if (hasRole('admin') || hasRole('superadmin')) return true
+    if (hasRole('superadmin')) return true
     const perms = Array.isArray(user?.permissions) ? user.permissions : []
     return perms.map(p => String(p).toLowerCase()).includes(String(perm).toLowerCase())
   }
 
-  const value = useMemo(() => ({ token, user, login, logout, isAuthed: !!token, hasRole, hasPermission }), [token, user])
+  const value = useMemo(() => ({ token, user, login, logout, isAuthed: !!token, hasRole, hasPermission }),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+   [token, user])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+//eslint-disable-next-line
 export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')

@@ -1,12 +1,17 @@
-import { NavLink } from "react-router-dom"
+import React, { useState } from "react"
+import { NavLink, Link, useLocation } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext"
 
 export default function Sidebar({ settings }) {
   const { hasPermission } = useAuth()
   const navCls = ({ isActive }) =>
-    `nav-item flex w-full items-center whitespace-nowrap border-b space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-      isActive ? 'bg-light-blue text-primary border-r-4 border-medium-blue' : 'text-gray-600 hover:bg-blue-50 border-b-transparent'
+    `nav-item flex w-full items-center whitespace-nowrap space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+      isActive ? 'bg-light-blue text-primary shadow' : 'text-gray-600 hover:bg-blue-50 hover:shadow'
     }`
+
+  const [zonesOpen, setZonesOpen] = useState(false)
+  const location = useLocation()
+  const currentTab = new URLSearchParams(location.search).get('tab') || 'admin'
 
   return (
     <div className={`w-64 bg-white shadow-xl z-40 relative pb-20 overflow-y-scroll`}>
@@ -100,12 +105,37 @@ export default function Sidebar({ settings }) {
           <span>Customers</span>
         </NavLink>
         */}
-        <NavLink to="/zones" className={navCls}>
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7l9-4 9 4-9 4-9-4zm0 6l9 4 9-4" />
-          </svg>
-          <span>Zones</span>
-        </NavLink>
+        <div className="w-full">
+          <div className="flex w-full items-center justify-between">
+            <NavLink
+              to="/zones"
+              className={({ isActive }) => `w-full nav-item flex items-center whitespace-nowrap space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                isActive ? 'bg-light-blue text-primary shadow' : 'text-gray-600 hover:bg-blue-50 hover:shadow'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7l9-4 9 4-9 4-9-4zm0 6l9 4 9-4" />
+              </svg>
+              <span>Zones</span>
+            </NavLink>
+            <button
+              aria-label="Toggle Zones submenu"
+              onClick={() => setZonesOpen(v => !v)}
+              className="px-2 text-gray-600 hover:text-primary"
+            >
+              <svg className={`w-6 h-6 transition-transform ${zonesOpen ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M6.293 7.293a1 1 0 011.414 0L12 11.586l-4.293 4.293a1 1 0 01-1.414-1.414L9.586 12 6.293 8.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+              </svg>
+            </button>
+          </div>
+          {zonesOpen && (
+            <div className="ml-6 mt-1 mb-2 rounded-md bg-white shadow p-1">
+              <Link to="/zones?tab=admin" className={`flex items-center px-3 py-2 rounded text-sm ${currentTab==='admin'?'text-primary bg-blue-50':'text-gray-700 hover:bg-gray-50'}`}>Admin</Link>
+              <Link to="/zones?tab=customer" className={`flex items-center px-3 py-2 rounded text-sm ${currentTab==='customer'?'text-primary bg-blue-50':'text-gray-700 hover:bg-gray-50'}`}>Customer</Link>
+              <Link to="/zones?tab=staff" className={`flex items-center px-3 py-2 rounded text-sm ${currentTab==='staff'?'text-primary bg-blue-50':'text-gray-700 hover:bg-gray-50'}`}>Staff</Link>
+            </div>
+          )}
+        </div>
         <NavLink to="/health-reminders" className={navCls}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3M12 22a10 10 0 110-20 10 10 0 010 20z" />

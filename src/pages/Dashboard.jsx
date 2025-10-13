@@ -157,10 +157,10 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-2">
             <div className="text-sm text-gray-500">Recent Orders</div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto bg-white shadow rounded-md">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-left border-b">
+                <tr className="text-left bg-gray-50">
                   <th className="py-2 pr-4">Order ID</th>
                   <th className="py-2 pr-4">Customer</th>
                   <th className="py-2 pr-4">Driver</th>
@@ -170,7 +170,7 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {(recentOrders || []).slice(0, 10).map(o => (
-                  <tr key={o._id} className="border-b last:border-b-0">
+                  <tr key={o._id} className="hover:bg-gray-50">
                     <td className="py-2 pr-4">{o._id}</td>
                     <td className="py-2 pr-4">{o.customer?.name || '—'}</td>
                     <td className="py-2 pr-4">{o.assignedDriver?.name || '—'}</td>
@@ -204,10 +204,10 @@ export default function Dashboard() {
         </Card>
         <Card className="p-4">
           <div className="text-sm text-gray-500 mb-2">Top Customers ({range})</div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto bg-white shadow rounded-md">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-left border-b">
+                <tr className="text-left bg-gray-50">
                   <th className="py-2 pr-4">Name</th>
                   <th className="py-2 pr-4">Orders</th>
                   <th className="py-2 pr-4">Amount</th>
@@ -216,7 +216,7 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {(topCustomers || []).map(c => (
-                  <tr key={c._id} className="border-b last:border-b-0">
+                  <tr key={c._id} className="hover:bg-gray-50">
                     <td className="py-2 pr-4">{c.name || '—'}</td>
                     <td className="py-2 pr-4">{c.orders}</td>
                     <td className="py-2 pr-4">PKR {c.amount?.toFixed ? c.amount.toFixed(0) : c.amount}</td>

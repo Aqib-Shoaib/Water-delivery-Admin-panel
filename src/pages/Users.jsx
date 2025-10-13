@@ -24,10 +24,11 @@ export default function Users() {
   const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token])
 
   const load = async () => {
+    if (!token) return
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`${API_BASE}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } })
+      const res = await fetch(`${API_BASE}/api/admin/users`, { headers: authHeaders })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setItems(data)
@@ -39,7 +40,7 @@ export default function Users() {
   }
 
   useEffect(() => { load() // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [token])
 
   const onCreated = async () => { await load() }
   const onSaved = async () => { await load() }
@@ -47,7 +48,7 @@ export default function Users() {
   const onDelete = async (id) => {
     if (!confirm('Delete this user?')) return
     try {
-      const res = await fetch(`${API_BASE}/api/admin/users/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      const res = await fetch(`${API_BASE}/api/admin/users/${id}`, { method: 'DELETE', headers: authHeaders })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       await load()
     } catch (e) { alert(e.message) }
@@ -60,13 +61,13 @@ export default function Users() {
     return false
   }
 
-  const roleBadgeCls = (role) => {
-    switch (role) {
-      case 'admin': return 'bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded-full text-xs'
-      case 'driver': return 'bg-purple-100 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full text-xs'
-      default: return 'bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-xs'
-    }
-  }
+  // const roleBadgeCls = (role) => {
+  //   switch (role) {
+  //     case 'admin': return 'bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded-full text-xs'
+  //     case 'driver': return 'bg-purple-100 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full text-xs'
+  //     default: return 'bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-xs'
+  //   }
+  // }
 
   return (
     <div className="space-y-6">
@@ -77,21 +78,22 @@ export default function Users() {
             <p className="text-xs text-gray-500">Manage platform users</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={load} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Refresh</button>
-            <button onClick={() => setShowAdd(true)} className="px-3 py-2 text-sm rounded-md bg-primary text-white hover:bg-primary">Add User</button>
+            <Button variant="secondary" onClick={load}>Refresh</Button>
+            <Button onClick={() => setShowAdd(true)}>Add User</Button>
           </div>
         </div>
 
+        {error && <div className="my-2 p-2 text-sm rounded bg-red-50 text-red-700 border border-red-200">{error}</div>}
         {loading ? (
           <div className="py-10 text-center text-gray-500">Loading...</div>
         ) : (
           <div className="mt-4">
             <>
               <TableControls controls={controls} className="mb-3" />
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto bg-white shadow rounded-md">
                 <table className="min-w-full text-xs md:text-sm">
                   <thead>
-                    <tr className="text-left border-b">
+                    <tr className="text-left bg-gray-50">
                       <th className="py-2 pr-4">Empl. Name</th>
                       <th className="py-2 pr-4">Sur Name</th>
                       <th className="py-2 pr-4">Empl. ID</th>
@@ -114,7 +116,7 @@ export default function Users() {
                   </thead>
                   <tbody>
                     {view.map(u => (
-                      <tr key={u._id} className="border-b last:border-b-0 hover:bg-gray-50 align-top">
+                      <tr key={u._id} className="hover:bg-gray-50 align-top">
                         <td className="py-2 pr-4">
                           <div className="flex items-center gap-2">
                             <span>{u.firstName || (u.name?.split(' ')[0] || '—')}</span>
