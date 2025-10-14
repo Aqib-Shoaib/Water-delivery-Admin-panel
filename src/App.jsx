@@ -24,6 +24,8 @@ import About from './pages/About.jsx'
 import Contact from './pages/Contact.jsx'
 import Invite from './pages/Invite.jsx'
 import AuditLogs from './pages/AuditLogs.jsx'
+import Payroll from './pages/Payroll.jsx'
+import PayrollSettings from './pages/PayrollSettings.jsx'
 
 function RequireAuth({ children }) {
   const { isAuthed } = useAuth()
@@ -70,6 +72,8 @@ function App() {
         <Route path="/docs" element={<RequireAdmin><AdminLayout><Docs /></AdminLayout></RequireAdmin>} />
         <Route path="/zones" element={<RequireAdmin><AdminLayout><Divisions /></AdminLayout></RequireAdmin>} />
         <Route path="/messages" element={<RequireAdmin><AdminLayout><Messages /></AdminLayout></RequireAdmin>} />
+        <Route path="/payroll" element={<RequireAdmin><AdminLayout><Payroll /></AdminLayout></RequireAdmin>} />
+        <Route path="/payroll-settings" element={<RequireAdmin><AdminLayout><PayrollSettings /></AdminLayout></RequireAdmin>} />
       </Routes>
     </BrowserRouter>
   )

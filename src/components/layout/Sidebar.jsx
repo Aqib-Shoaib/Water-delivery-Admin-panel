@@ -154,6 +154,22 @@ export default function Sidebar({ settings }) {
           </svg>
           <span>Invoices</span>
         </NavLink>
+        {hasPermission && hasPermission('salarySlips:read') && (
+          <NavLink to="/payroll" className={navCls}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-2.21 0-4 1.343-4 3s1.79 3 4 3 4 1.343 4 3-1.79 3-4 3m0-12V4m0 4v12" />
+            </svg>
+            <span>Payroll</span>
+          </NavLink>
+        )}
+        {hasPermission && hasPermission('settings:write') && (
+          <NavLink to="/payroll-settings" className={navCls}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2v2m0 0a4 4 0 100 8 4 4 0 000-8zm0 8v2m0-2V8" />
+            </svg>
+            <span>Payroll Settings</span>
+          </NavLink>
+        )}
       </nav>
 
       {/* add logo water mark here */}
