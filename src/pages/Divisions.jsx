@@ -292,12 +292,11 @@ export default function Divisions() {
   const [openWarning, setOpenWarning] = useState(false)
   const [openResignation, setOpenResignation] = useState(false)
   const [openExperience, setOpenExperience] = useState(false)
-  const [openEdit, setOpenEdit] = useState(false)
 
-  // Employee details modal
-  const [openDetails, setOpenDetails] = useState(false)
-  const [detailsUser, setDetailsUser] = useState(null)
-  const [detailsLoading, setDetailsLoading] = useState(false)
+  // Unified manage modal state
+  const [openManage, setOpenManage] = useState(false)
+  const [manageUser, setManageUser] = useState(null)
+  const [manageLoading, setManageLoading] = useState(false)
 
   // Forms
   const [slipForm, setSlipForm] = useState({ user:'', month:'', gross:'', deductions:'', net:'', notes:'', fileUrl:'' })
@@ -306,16 +305,22 @@ export default function Divisions() {
   const [warningForm, setWarningForm] = useState({ user:'', date:'', subject:'', description:'', fileUrl:'' })
   const [resignationForm, setResignationForm] = useState({ user:'', date:'', reason:'', finalSettlement:'', fileUrl:'' })
   const [experienceForm, setExperienceForm] = useState({ user:'', date:'', companyName:'', remarks:'', fileUrl:'' })
-  const [editForm, setEditForm] = useState({ id:'', phone:'', jobTitle:'', department:'', employeeType:'', shiftTimings:'', workLocation:'', basicSalary:'', allowances:'', deductions:'', status:'working', roleName:'' })
+  const [editForm, setEditForm] = useState({
+    id:'',
+    // identity
+    name:'', firstName:'', lastName:'', email:'', employeeId:'',
+    // personal
+    phone:'', dob:'', gender:'', education:'', address:'',
+    // company
+    role:'', roleName:'', department:'', designation:'', jobTitle:'', employeeType:'', shiftTimings:'', workLocation:'', status:'working',
+    companyEmail:'', companyPhone:'', companyBelongings:'', duties:'',
+    // compensation
+    basicSalary:'', allowances:'', deductions:'',
+    // misc
+    remarks:'', cnic:'', cnicOrPassport:'', joiningDate:''
+  })
 
-  function pickUser(id) {
-    setSlipForm(s => ({ ...s, user: id }));
-    setLoanForm(s => ({ ...s, user: id }));
-    setLeaveForm(s => ({ ...s, user: id }));
-    setWarningForm(s => ({ ...s, user: id }));
-    setResignationForm(s => ({ ...s, user: id }));
-    setExperienceForm(s => ({ ...s, user: id }));
-  }
+  // pickUser no longer needed; actions handled in unified Manage modal
 
   const loadHolidays = useCallback(async () => {
     setHolidayLoading(true)
@@ -426,23 +431,7 @@ export default function Divisions() {
     URL.revokeObjectURL(url)
   }
 
-  function openEditFor(user) {
-    setEditForm({
-      id: user._id,
-      phone: user.phone || '',
-      jobTitle: user.jobTitle || '',
-      department: user.department || '',
-      employeeType: user.employeeType || '',
-      shiftTimings: user.shiftTimings || '',
-      workLocation: user.workLocation || '',
-      basicSalary: user.basicSalary ?? '',
-      allowances: user.allowances ?? '',
-      deductions: user.deductions ?? '',
-      status: user.status || 'working',
-      roleName: user.roleName || ''
-    })
-    setOpenEdit(true)
-  }
+  // remove standalone edit/details; seeding editForm will be done in openManageFor
 
   async function uploadFileReturnUrl(file) {
     const fd = new FormData(); fd.append('file', file)
@@ -451,15 +440,46 @@ export default function Divisions() {
     const data = await res.json(); return data.url
   }
 
-  async function openDetailsFor(id) {
-    setOpenDetails(true)
-    setDetailsLoading(true)
+  // Unified Manage handler: opens modal, loads user (if id), and seeds edit form
+  async function openManageFor(idOrUser) {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/users/${id}`, { headers })
-      if (!res.ok) throw new Error('Failed to load user')
-      setDetailsUser(await res.json())
-    } catch (e) { alert(e.message) } finally { setDetailsLoading(false) }
+      setOpenManage(true)
+      setManageLoading(true)
+      if (idOrUser && typeof idOrUser === 'object' && idOrUser._id) {
+        const u = idOrUser
+        setManageUser(u)
+        setEditForm({
+          id: u._id,
+          name: u.name || '', firstName: u.firstName || '', lastName: u.lastName || '', email: u.email || '', employeeId: u.employeeId || '',
+          phone: u.phone || '', dob: u.dob ? new Date(u.dob).toISOString().slice(0,10) : '', gender: u.gender || '', education: u.education || '', address: u.address || '',
+          role: u.role || '', roleName: u.roleName || '', department: u.department || '', designation: u.designation || '', jobTitle: u.jobTitle || '', employeeType: u.employeeType || '', shiftTimings: u.shiftTimings || '', workLocation: u.workLocation || '', status: u.status || 'working',
+          companyEmail: u.companyEmail || '', companyPhone: u.companyPhone || '', companyBelongings: u.companyBelongings || '', duties: u.duties || '',
+          basicSalary: u.basicSalary ?? '', allowances: u.allowances ?? '', deductions: u.deductions ?? '',
+          remarks: u.remarks || '', cnic: u.cnic || u.cnicOrPassport || '', cnicOrPassport: u.cnicOrPassport || '', joiningDate: u.joiningDate ? new Date(u.joiningDate).toISOString().slice(0,10) : ''
+        })
+      } else if (idOrUser) {
+        const res = await fetch(`${API_BASE}/api/admin/users/${idOrUser}`, { headers })
+        if (!res.ok) throw new Error('Failed to load user')
+        const u = await res.json()
+        setManageUser(u)
+        setEditForm({
+          id: u._id,
+          name: u.name || '', firstName: u.firstName || '', lastName: u.lastName || '', email: u.email || '', employeeId: u.employeeId || '',
+          phone: u.phone || '', dob: u.dob ? new Date(u.dob).toISOString().slice(0,10) : '', gender: u.gender || '', education: u.education || '', address: u.address || '',
+          role: u.role || '', roleName: u.roleName || '', department: u.department || '', designation: u.designation || '', jobTitle: u.jobTitle || '', employeeType: u.employeeType || '', shiftTimings: u.shiftTimings || '', workLocation: u.workLocation || '', status: u.status || 'working',
+          companyEmail: u.companyEmail || '', companyPhone: u.companyPhone || '', companyBelongings: u.companyBelongings || '', duties: u.duties || '',
+          basicSalary: u.basicSalary ?? '', allowances: u.allowances ?? '', deductions: u.deductions ?? '',
+          remarks: u.remarks || '', cnic: u.cnic || u.cnicOrPassport || '', cnicOrPassport: u.cnicOrPassport || '', joiningDate: u.joiningDate ? new Date(u.joiningDate).toISOString().slice(0,10) : ''
+        })
+      }
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      setManageLoading(false)
+    }
   }
+
+  // remove standalone details modal handler (merged into Manage)
 
   const loadEmployeeTotals = useCallback(async () => {
     try {
@@ -672,10 +692,7 @@ export default function Divisions() {
                     <div className="flex gap-2">
                       <button onClick={()=>setAddOpen(true)} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Add Employee</button>
                       <button onClick={()=>{ setOpenSlip(true) }} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Pay Slip</button>
-                      <button onClick={()=>{ setOpenLoan(true) }} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Loan Form</button>
-                      <button onClick={()=>{ setOpenLeaveSalary(true) }} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Leave Salary</button>
                       <button onClick={()=>{ setOpenWarning(true) }} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Warning Letter</button>
-                      <button onClick={()=>{ setOpenResignation(true) }} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Resignation</button>
                       <button onClick={()=>{ setOpenExperience(true) }} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Experience Letter</button>
                       <button onClick={()=>downloadCSV()} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Download CSV</button>
                     </div>
@@ -699,6 +716,193 @@ export default function Divisions() {
                         <Input type="date" label="To" value={to} onChange={setTo} />
                       </>
                     )}
+
+                  {/* Unified Manage Employee modal (single window: edit + actions) */}
+                  {openManage && (
+                    <Modal title="Manage Employee" onClose={()=>{ setOpenManage(false); setManageUser(null) }}>
+                      {manageLoading && <div className="text-sm text-gray-500">Loading...</div>}
+                      {!manageLoading && manageUser && (
+                        <div className="space-y-6">
+                          <form className="grid grid-cols-1 md:grid-cols-3 gap-2" onSubmit={async(e)=>{ e.preventDefault(); try {
+                            const payload = {
+                              // identity
+                              name: editForm.name||undefined,
+                              firstName: editForm.firstName||undefined,
+                              lastName: editForm.lastName||undefined,
+                              email: editForm.email||undefined,
+                              employeeId: editForm.employeeId||undefined,
+                              // personal
+                              phone: editForm.phone||undefined,
+                              dob: editForm.dob||undefined,
+                              gender: editForm.gender||undefined,
+                              education: editForm.education||undefined,
+                              address: editForm.address||undefined,
+                              // company
+                              role: editForm.role||undefined,
+                              roleName: editForm.roleName||undefined,
+                              department: editForm.department||undefined,
+                              designation: editForm.designation||undefined,
+                              jobTitle: editForm.jobTitle||undefined,
+                              employeeType: editForm.employeeType||undefined,
+                              shiftTimings: editForm.shiftTimings||undefined,
+                              workLocation: editForm.workLocation||undefined,
+                              status: editForm.status||undefined,
+                              companyEmail: editForm.companyEmail||undefined,
+                              companyPhone: editForm.companyPhone||undefined,
+                              companyBelongings: editForm.companyBelongings||undefined,
+                              duties: editForm.duties||undefined,
+                              // compensation
+                              basicSalary: editForm.basicSalary!==''?Number(editForm.basicSalary):undefined,
+                              allowances: editForm.allowances!==''?Number(editForm.allowances):undefined,
+                              deductions: editForm.deductions!==''?Number(editForm.deductions):undefined,
+                              // misc
+                              remarks: editForm.remarks||undefined,
+                              cnic: editForm.cnic||undefined,
+                              cnicOrPassport: editForm.cnicOrPassport||undefined,
+                              joiningDate: editForm.joiningDate||undefined,
+                            }
+                            const res = await fetch(`${API_BASE}/api/admin/users/${editForm.id}`, { method:'PUT', headers, body: JSON.stringify(payload) })
+                            if(!res.ok) throw new Error('Failed')
+                            const r = await fetch(`${API_BASE}/api/admin/users/${editForm.id}`, { headers }); if (r.ok) setManageUser(await r.json())
+                            alert('Saved')
+                          } catch(err){ alert(err.message) } }}>
+                            <Input label="Name" value={editForm.name} onChange={v=>setEditForm({...editForm,name:v})} />
+                            <Input label="First Name" value={editForm.firstName} onChange={v=>setEditForm({...editForm,firstName:v})} />
+                            <Input label="Last Name" value={editForm.lastName} onChange={v=>setEditForm({...editForm,lastName:v})} />
+                            <Input label="Email" value={editForm.email} onChange={v=>setEditForm({...editForm,email:v})} />
+                            <Input label="Employee ID" value={editForm.employeeId} onChange={v=>setEditForm({...editForm,employeeId:v})} />
+                            <Input label="Phone" value={editForm.phone} onChange={v=>setEditForm({...editForm,phone:v})} />
+                            <Input type="date" label="DOB" value={editForm.dob} onChange={v=>setEditForm({...editForm,dob:v})} />
+                            <Input label="Gender" value={editForm.gender} onChange={v=>setEditForm({...editForm,gender:v})} />
+                            <Input label="Education" value={editForm.education} onChange={v=>setEditForm({...editForm,education:v})} />
+                            <Input className="md:col-span-3" label="Address" value={editForm.address} onChange={v=>setEditForm({...editForm,address:v})} />
+                            <Input label="Role" value={editForm.role} onChange={v=>setEditForm({...editForm,role:v})} />
+                            <Input label="Role Name" value={editForm.roleName} onChange={v=>setEditForm({...editForm,roleName:v})} />
+                            <Input label="Department" value={editForm.department} onChange={v=>setEditForm({...editForm,department:v})} />
+                            <Input label="Designation" value={editForm.designation} onChange={v=>setEditForm({...editForm,designation:v})} />
+                            <Input label="Job Title" value={editForm.jobTitle} onChange={v=>setEditForm({...editForm,jobTitle:v})} />
+                            <Input label="Employee Type" value={editForm.employeeType} onChange={v=>setEditForm({...editForm,employeeType:v})} />
+                            <Input label="Shift Timings" value={editForm.shiftTimings} onChange={v=>setEditForm({...editForm,shiftTimings:v})} />
+                            <Input label="Work Location" value={editForm.workLocation} onChange={v=>setEditForm({...editForm,workLocation:v})} />
+                            <label className="text-sm">
+                              <div className="text-primary mb-1">Status</div>
+                              <select className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg" value={editForm.status} onChange={v=>setEditForm({...editForm,status:v.target.value})}>
+                                <option value="working">working</option>
+                                <option value="waiting">waiting</option>
+                                <option value="terminated">terminated</option>
+                              </select>
+                            </label>
+                            <Input label="Company Email" value={editForm.companyEmail} onChange={v=>setEditForm({...editForm,companyEmail:v})} />
+                            <Input label="Company Phone" value={editForm.companyPhone} onChange={v=>setEditForm({...editForm,companyPhone:v})} />
+                            <Input className="md:col-span-3" label="Company Belongings" value={editForm.companyBelongings} onChange={v=>setEditForm({...editForm,companyBelongings:v})} />
+                            <Input className="md:col-span-3" label="Duties" value={editForm.duties} onChange={v=>setEditForm({...editForm,duties:v})} />
+                            <Input type="number" label="Basic Salary" value={editForm.basicSalary} onChange={v=>setEditForm({...editForm,basicSalary:v})} />
+                            <Input type="number" label="Allowances" value={editForm.allowances} onChange={v=>setEditForm({...editForm,allowances:v})} />
+                            <Input type="number" label="Deductions" value={editForm.deductions} onChange={v=>setEditForm({...editForm,deductions:v})} />
+                            <Input className="md:col-span-3" label="Remarks" value={editForm.remarks} onChange={v=>setEditForm({...editForm,remarks:v})} />
+                            <Input label="CNIC" value={editForm.cnic} onChange={v=>setEditForm({...editForm,cnic:v})} />
+                            <Input label="CNIC/Passport" value={editForm.cnicOrPassport} onChange={v=>setEditForm({...editForm,cnicOrPassport:v})} />
+                            <Input type="date" label="Joining Date" value={editForm.joiningDate} onChange={v=>setEditForm({...editForm,joiningDate:v})} />
+                            <div className="md:col-span-3 flex justify-end gap-2"><Button type="submit" primary>Save</Button></div>
+                          </form>
+
+                          <div className="space-y-4">
+                            <div className="text-sm font-semibold text-primary">Actions</div>
+                            <div className="space-y-4">
+                              <div className="border rounded-md p-3">
+                                <div className="text-sm font-medium text-primary mb-2">Salary Slip</div>
+                                <form className="grid grid-cols-1 md:grid-cols-3 gap-2" onSubmit={async(e)=>{ e.preventDefault(); try {
+                                  const payload = { ...slipForm, user: manageUser._id, gross:Number(slipForm.gross||0), deductions:Number(slipForm.deductions||0), net:Number(slipForm.net||0) }
+                                  const res = await fetch(`${API_BASE}/api/salary-slips`, { method:'POST', headers, body: JSON.stringify(payload) }); if(!res.ok) throw new Error('Failed')
+                                  setSlipForm({ user:'', month:'', gross:'', deductions:'', net:'', notes:'', fileUrl:'' }); alert('Salary slip created')
+                                } catch(err){ alert(err.message) } }}>
+                                  <Input label="Month (YYYY-MM)" value={slipForm.month} onChange={v=>setSlipForm({...slipForm,month:v})} />
+                                  <Input type="number" label="Gross" value={slipForm.gross} onChange={v=>setSlipForm({...slipForm,gross:v})} />
+                                  <Input type="number" label="Deductions" value={slipForm.deductions} onChange={v=>setSlipForm({...slipForm,deductions:v})} />
+                                  <Input type="number" label="Net" value={slipForm.net} onChange={v=>setSlipForm({...slipForm,net:v})} />
+                                  <Input label="File URL" value={slipForm.fileUrl} onChange={v=>setSlipForm({...slipForm,fileUrl:v})} className="md:col-span-2" />
+                                  <Input label="Notes" value={slipForm.notes} onChange={v=>setSlipForm({...slipForm,notes:v})} className="md:col-span-3" />
+                                  <div className="md:col-span-3 flex justify-end"><Button type="submit" primary>Create</Button></div>
+                                </form>
+                              </div>
+
+                              <div className="border rounded-md p-3">
+                                <div className="text-sm font-medium text-primary mb-2">Loan</div>
+                                <form className="grid grid-cols-1 md:grid-cols-3 gap-2" onSubmit={async(e)=>{ e.preventDefault(); try {
+                                  const payload = { user: manageUser._id, amount:Number(loanForm.amount||0), date:loanForm.date, note:loanForm.note, type:'loan' }
+                                  const res = await fetch(`${API_BASE}/api/payments`, { method:'POST', headers, body: JSON.stringify(payload) }); if(!res.ok) throw new Error('Failed')
+                                  setLoanForm({ user:'', amount:'', date:'', note:'' }); alert('Loan created')
+                                } catch(err){ alert(err.message) } }}>
+                                  <Input type="number" label="Amount" value={loanForm.amount} onChange={v=>setLoanForm({...loanForm,amount:v})} />
+                                  <Input type="date" label="Date" value={loanForm.date} onChange={v=>setLoanForm({...loanForm,date:v})} />
+                                  <Input label="Note" value={loanForm.note} onChange={v=>setLoanForm({...loanForm,note:v})} className="md:col-span-3" />
+                                  <div className="md:col-span-3 flex justify-end"><Button type="submit" primary>Create</Button></div>
+                                </form>
+                              </div>
+
+                              <div className="border rounded-md p-3">
+                                <div className="text-sm font-medium text-primary mb-2">Leave Salary</div>
+                                <form className="grid grid-cols-1 md:grid-cols-3 gap-2" onSubmit={async(e)=>{ e.preventDefault(); try {
+                                  const payload = { user: manageUser._id, amount:Number(leaveForm.amount||0), date:leaveForm.date, note:leaveForm.note, type:'leave-salary' }
+                                  const res = await fetch(`${API_BASE}/api/payments`, { method:'POST', headers, body: JSON.stringify(payload) }); if(!res.ok) throw new Error('Failed')
+                                  setLeaveForm({ user:'', amount:'', date:'', note:'' }); alert('Leave salary created')
+                                } catch(err){ alert(err.message) } }}>
+                                  <Input type="number" label="Amount" value={leaveForm.amount} onChange={v=>setLeaveForm({...leaveForm,amount:v})} />
+                                  <Input type="date" label="Date" value={leaveForm.date} onChange={v=>setLeaveForm({...leaveForm,date:v})} />
+                                  <Input label="Note" value={leaveForm.note} onChange={v=>setLeaveForm({...leaveForm,note:v})} className="md:col-span-3" />
+                                  <div className="md:col-span-3 flex justify-end"><Button type="submit" primary>Create</Button></div>
+                                </form>
+                              </div>
+                              <div className="border rounded-md p-3">
+                                <div className="text-sm font-medium text-primary mb-2">Warning Letter</div>
+                                <form className="grid grid-cols-1 md:grid-cols-2 gap-2" onSubmit={async(e)=>{ e.preventDefault(); try {
+                                  const payload = { ...warningForm, user: manageUser._id }
+                                  const res = await fetch(`${API_BASE}/api/warnings`, { method:'POST', headers, body: JSON.stringify(payload) }); if(!res.ok) throw new Error('Failed')
+                                  setWarningForm({ user:'', date:'', subject:'', description:'', fileUrl:'' }); alert('Warning issued')
+                                } catch(err){ alert(err.message) } }}>
+                                  <Input type="date" label="Date" value={warningForm.date} onChange={v=>setWarningForm({...warningForm,date:v})} />
+                                  <Input label="Subject" value={warningForm.subject} onChange={v=>setWarningForm({...warningForm,subject:v})} className="md:col-span-1" />
+                                  <Textarea label="Description" value={warningForm.description} onChange={v=>setWarningForm({...warningForm,description:v})} className="md:col-span-2" />
+                                  <Input label="File URL" value={warningForm.fileUrl} onChange={v=>setWarningForm({...warningForm,fileUrl:v})} className="md:col-span-2" />
+                                  <div className="md:col-span-2 flex justify-end"><Button type="submit" primary>Issue</Button></div>
+                                </form>
+                              </div>
+
+                              <div className="border rounded-md p-3">
+                                <div className="text-sm font-medium text-primary mb-2">Resignation</div>
+                                <form className="grid grid-cols-1 md:grid-cols-2 gap-2" onSubmit={async(e)=>{ e.preventDefault(); try {
+                                  const payload = { ...resignationForm, user: manageUser._id, finalSettlement: Number(resignationForm.finalSettlement||0) }
+                                  const res = await fetch(`${API_BASE}/api/resignations`, { method:'POST', headers, body: JSON.stringify(payload) }); if(!res.ok) throw new Error('Failed')
+                                  setResignationForm({ user:'', date:'', reason:'', finalSettlement:'', fileUrl:'' }); alert('Resignation saved')
+                                } catch(err){ alert(err.message) } }}>
+                                  <Input type="date" label="Date" value={resignationForm.date} onChange={v=>setResignationForm({...resignationForm,date:v})} />
+                                  <Textarea label="Reason" value={resignationForm.reason} onChange={v=>setResignationForm({...resignationForm,reason:v})} className="md:col-span-2" />
+                                  <Input type="number" label="Final Settlement" value={resignationForm.finalSettlement} onChange={v=>setResignationForm({...resignationForm,finalSettlement:v})} />
+                                  <Input label="File URL" value={resignationForm.fileUrl} onChange={v=>setResignationForm({...resignationForm,fileUrl:v})} />
+                                  <div className="md:col-span-2 flex justify-end"><Button type="submit" primary>Save</Button></div>
+                                </form>
+                              </div>
+
+                              <div className="border rounded-md p-3">
+                                <div className="text-sm font-medium text-primary mb-2">Experience Letter</div>
+                                <form className="grid grid-cols-1 md:grid-cols-2 gap-2" onSubmit={async(e)=>{ e.preventDefault(); try {
+                                  const payload = { ...experienceForm, user: manageUser._id }
+                                  const res = await fetch(`${API_BASE}/api/experience-letters`, { method:'POST', headers, body: JSON.stringify(payload) }); if(!res.ok) throw new Error('Failed')
+                                  setExperienceForm({ user:'', date:'', companyName:'', remarks:'', fileUrl:'' }); alert('Experience letter issued')
+                                } catch(err){ alert(err.message) } }}>
+                                  <Input type="date" label="Date" value={experienceForm.date} onChange={v=>setExperienceForm({...experienceForm,date:v})} />
+                                  <Input label="Company Name" value={experienceForm.companyName} onChange={v=>setExperienceForm({...experienceForm,companyName:v})} />
+                                  <Input label="File URL" value={experienceForm.fileUrl} onChange={v=>setExperienceForm({...experienceForm,fileUrl:v})} />
+                                  <Textarea label="Remarks" value={experienceForm.remarks} onChange={v=>setExperienceForm({...experienceForm,remarks:v})} className="md:col-span-2" />
+                                  <div className="md:col-span-2 flex justify-end"><Button type="submit" primary>Issue</Button></div>
+                                </form>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </Modal>
+                  )}
                     <Button onClick={loadEmployeeTotals}>Apply</Button>
                   </div>
 
@@ -749,14 +953,7 @@ export default function Divisions() {
                               <td className="py-2 px-2">{u.status || '—'}</td>
                               <td className="py-2 px-2">
                                 <div className="flex flex-wrap gap-1">
-                                  <button className="text-primary underline" onClick={()=>{ pickUser(u._id); setOpenSlip(true); }}>Pay Slip</button>
-                                  <button className="text-primary underline" onClick={()=>{ pickUser(u._id); setOpenLoan(true); }}>Loan</button>
-                                  <button className="text-primary underline" onClick={()=>{ pickUser(u._id); setOpenLeaveSalary(true); }}>Leave Salary</button>
-                                  <button className="text-primary underline" onClick={()=>{ pickUser(u._id); setOpenWarning(true); }}>Warning</button>
-                                  <button className="text-primary underline" onClick={()=>{ pickUser(u._id); setOpenResignation(true); }}>Resignation</button>
-                                  <button className="text-primary underline" onClick={()=>{ pickUser(u._id); setOpenExperience(true); }}>Experience</button>
-                                  <button className="text-primary underline" onClick={()=>openDetailsFor(u._id)}>Details</button>
-                                  <button className="text-primary underline" onClick={()=>openEditFor(u)}>Edit</button>
+                                  <button className="text-primary underline" onClick={()=>openManageFor(u)}>Manage</button>
                                 </div>
                               </td>
                             </tr>
@@ -767,49 +964,7 @@ export default function Divisions() {
                     )}
                   </div>
 
-                  {/* Employee Details modal */}
-                  {openDetails && (
-                    <Modal title="Employee Details" onClose={()=>{ setOpenDetails(false); setDetailsUser(null); }}>
-                      {detailsLoading && <div className="text-sm text-gray-500">Loading...</div>}
-                      {!detailsLoading && detailsUser && (
-                        <div className="space-y-4 text-sm">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <Field label="Name" value={detailsUser.name} />
-                            <Field label="First Name" value={detailsUser.firstName} />
-                            <Field label="Last Name" value={detailsUser.lastName} />
-                            <Field label="Employee ID" value={detailsUser.employeeId} />
-                            <Field label="Email" value={detailsUser.email} />
-                            <Field label="Phone" value={detailsUser.phone} />
-                            <Field label="DOB" value={detailsUser.dob && new Date(detailsUser.dob).toLocaleDateString()} />
-                            <Field label="CNIC/Passport" value={detailsUser.cnicOrPassport || detailsUser.cnic} />
-                            <Field label="Role" value={detailsUser.role} />
-                            <Field label="Role Name" value={detailsUser.roleName} />
-                            <Field label="Job Title" value={detailsUser.jobTitle} />
-                            <Field label="Gender" value={detailsUser.gender} />
-                            <Field label="Joining Date" value={detailsUser.joiningDate && new Date(detailsUser.joiningDate).toLocaleDateString()} />
-                            <Field label="Department" value={detailsUser.department} />
-                            <Field label="Employee Type" value={detailsUser.employeeType} />
-                            <Field label="Shift Timings" value={detailsUser.shiftTimings} />
-                            <Field label="Work Location" value={detailsUser.workLocation} />
-                            <Field label="Education" value={detailsUser.education} />
-                            <Field label="Status" value={detailsUser.status} />
-                            <Field label="Basic Salary" value={typeof detailsUser.basicSalary==='number' ? detailsUser.basicSalary.toLocaleString() : detailsUser.basicSalary} />
-                            <Field label="Allowances" value={typeof detailsUser.allowances==='number' ? detailsUser.allowances.toLocaleString() : detailsUser.allowances} />
-                            <Field label="Deductions" value={typeof detailsUser.deductions==='number' ? detailsUser.deductions.toLocaleString() : detailsUser.deductions} />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <Field label="Address" value={detailsUser.address} full />
-                            <Field label="Duties" value={detailsUser.duties} full />
-                            <Field label="Company Phone" value={detailsUser.companyPhone} />
-                            <Field label="Company Email" value={detailsUser.companyEmail} />
-                            <Field label="Company Belongings" value={detailsUser.companyBelongings} full />
-                            <Field label="Remarks" value={detailsUser.remarks} full />
-                          </div>
-                          <div className="flex justify-end"><Button onClick={()=>setOpenDetails(false)}>Close</Button></div>
-                        </div>
-                      )}
-                    </Modal>
-                  )}
+                  {/* Standalone Employee Details modal removed; merged into Manage modal */}
 
                   {/* Modals */}
                   {addOpen && (
@@ -920,39 +1075,7 @@ export default function Divisions() {
                     </Modal>
                   )}
 
-                  {/* Edit Employee modal */}
-                  {openEdit && (
-                    <Modal title="Edit Employee" onClose={()=>setOpenEdit(false)}>
-                      <form className="grid grid-cols-1 md:grid-cols-3 gap-2" onSubmit={async(e)=>{ e.preventDefault(); try {
-                        const payload = { phone: editForm.phone||undefined, jobTitle: editForm.jobTitle||undefined, department: editForm.department||undefined, employeeType: editForm.employeeType||undefined, shiftTimings: editForm.shiftTimings||undefined, workLocation: editForm.workLocation||undefined, basicSalary: editForm.basicSalary!==''?Number(editForm.basicSalary):undefined, allowances: editForm.allowances!==''?Number(editForm.allowances):undefined, deductions: editForm.deductions!==''?Number(editForm.deductions):undefined, status: editForm.status||undefined, roleName: editForm.roleName||undefined }
-                        const res = await fetch(`${API_BASE}/api/admin/users/${editForm.id}`, { method:'PUT', headers, body: JSON.stringify(payload) })
-                        if(!res.ok) throw new Error('Failed')
-                        setOpenEdit(false)
-                        await loadEmployees()
-                        if (detailsUser && detailsUser._id === editForm.id) { const r = await fetch(`${API_BASE}/api/admin/users/${editForm.id}`, { headers }); if (r.ok) setDetailsUser(await r.json()) }
-                      } catch(err){ alert(err.message) } }}>
-                        <Input label="Phone" value={editForm.phone} onChange={v=>setEditForm({...editForm,phone:v})} />
-                        <Input label="Job Title" value={editForm.jobTitle} onChange={v=>setEditForm({...editForm,jobTitle:v})} />
-                        <Input label="Role Name" value={editForm.roleName} onChange={v=>setEditForm({...editForm,roleName:v})} />
-                        <Input label="Department" value={editForm.department} onChange={v=>setEditForm({...editForm,department:v})} />
-                        <Input label="Employee Type" value={editForm.employeeType} onChange={v=>setEditForm({...editForm,employeeType:v})} />
-                        <Input label="Shift Timings" value={editForm.shiftTimings} onChange={v=>setEditForm({...editForm,shiftTimings:v})} />
-                        <Input label="Work Location" value={editForm.workLocation} onChange={v=>setEditForm({...editForm,workLocation:v})} />
-                        <Input type="number" label="Basic Salary" value={editForm.basicSalary} onChange={v=>setEditForm({...editForm,basicSalary:v})} />
-                        <Input type="number" label="Allowances" value={editForm.allowances} onChange={v=>setEditForm({...editForm,allowances:v})} />
-                        <Input type="number" label="Deductions" value={editForm.deductions} onChange={v=>setEditForm({...editForm,deductions:v})} />
-                        <label className="text-sm">
-                          <div className="text-primary mb-1">Status</div>
-                          <select className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg" value={editForm.status} onChange={e=>setEditForm({...editForm,status:e.target.value})}>
-                            <option value="working">working</option>
-                            <option value="waiting">waiting</option>
-                            <option value="terminated">terminated</option>
-                          </select>
-                        </label>
-                        <div className="md:col-span-3 flex justify-end gap-2"><Button type="button" onClick={()=>setOpenEdit(false)}>Cancel</Button><Button type="submit" primary>Save</Button></div>
-                      </form>
-                    </Modal>
-                  )}
+                  {/* Standalone Edit Employee modal removed; merged into Manage modal */}
                 </section>
               )}
               {adminTab === 'attendance-summary' && (

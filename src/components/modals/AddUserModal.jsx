@@ -32,7 +32,7 @@ export default function AddUserModal({ open, onClose, onCreated, apiBase }) {
     if (open) {
       loadPermissions();
     }
-  }, [open])
+  }, [open, apiBase, headers])
 
   if (!open) return null
 
@@ -94,7 +94,8 @@ export default function AddUserModal({ open, onClose, onCreated, apiBase }) {
         <h3 className="text-lg font-semibold text-primary">Add User</h3>
         <p className="text-sm text-gray-600 mt-1">Create a new user account.</p>
 
-        <form onSubmit={onSubmit} className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="mt-4 max-h-[70vh] overflow-y-auto pr-1">
+        <form onSubmit={onSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-1">
             <label className="block text-sm font-medium text-primary mb-1">Name</label>
             <input className="form-input w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-medium-blue" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
@@ -261,6 +262,7 @@ export default function AddUserModal({ open, onClose, onCreated, apiBase }) {
             <button type="submit" disabled={loading} className="login-btn bg-primary text-white px-4 py-2 rounded-md">{loading ? 'Creating...' : 'Create'}</button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )

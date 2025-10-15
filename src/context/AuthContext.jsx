@@ -31,6 +31,40 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user')
   }
 
+  async function refreshMe() {
+    if (!token) return
+    const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+    const res = await fetch(`${API_BASE}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data?.user) {
+        setUser(data.user)
+        localStorage.setItem('user', JSON.stringify(data.user))
+      }
+    }
+  }
+
+  async function updateMe(updates) {
+    const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+    const res = await fetch(`${API_BASE}/api/auth/me`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(updates)
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    if (data?.user) {
+      setUser(data.user)
+      localStorage.setItem('user', JSON.stringify(data.user))
+    }
+    return data?.user
+  }
+
   const hasRole = (role) => {
     const r = (user?.role || '').toLowerCase()
     return r === role.toLowerCase()
@@ -41,7 +75,7 @@ export function AuthProvider({ children }) {
     return perms.map(p => String(p).toLowerCase()).includes(String(perm).toLowerCase())
   }
 
-  const value = useMemo(() => ({ token, user, login, logout, isAuthed: !!token, hasRole, hasPermission }),
+  const value = useMemo(() => ({ token, user, login, logout, isAuthed: !!token, hasRole, hasPermission, refreshMe, updateMe }),
   // eslint-disable-next-line react-hooks/exhaustive-deps
    [token, user])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
