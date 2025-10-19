@@ -75,3 +75,12 @@
 
 /* Global cursor pointers */
 button, a, [role="button"], .cursor-pointer { cursor: pointer; }
+
+/* Hide scrollbar but keep scrolling */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;    /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;            /* Chrome, Safari, Opera */
+}

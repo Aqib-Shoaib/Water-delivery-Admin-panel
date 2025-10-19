@@ -16,6 +16,7 @@ import Invoices from './pages/Invoices.jsx'
 import Docs from './pages/Docs.jsx'
 import Divisions from './pages/Divisions.jsx'
 import Assets from './pages/Assets.jsx'
+import Departments from './pages/Departments.jsx'
 import History from './pages/History.jsx'
 import Messages from './pages/Messages.jsx'
 import { useAuth } from './context/AuthContext.jsx'
@@ -26,6 +27,9 @@ import Invite from './pages/Invite.jsx'
 import AuditLogs from './pages/AuditLogs.jsx'
 import Payroll from './pages/Payroll.jsx'
 import PayrollSettings from './pages/PayrollSettings.jsx'
+import Finance from './pages/Finance.jsx'
+import Communication from './pages/Communication.jsx'
+import HelpCenter from './pages/HelpCenter.jsx'
 
 function RequireAuth({ children }) {
   const { isAuthed } = useAuth()
@@ -72,8 +76,12 @@ function App() {
         <Route path="/docs" element={<RequireAdmin><AdminLayout><Docs /></AdminLayout></RequireAdmin>} />
         <Route path="/zones" element={<RequireAdmin><AdminLayout><Divisions /></AdminLayout></RequireAdmin>} />
         <Route path="/messages" element={<RequireAdmin><AdminLayout><Messages /></AdminLayout></RequireAdmin>} />
+        <Route path="/departments" element={<RequireAdmin><AdminLayout><Departments /></AdminLayout></RequireAdmin>} />
         <Route path="/payroll" element={<RequireAdmin><AdminLayout><Payroll /></AdminLayout></RequireAdmin>} />
         <Route path="/payroll-settings" element={<RequireAdmin><AdminLayout><PayrollSettings /></AdminLayout></RequireAdmin>} />
+        <Route path="/finance" element={<RequireAdmin><AdminLayout><Finance /></AdminLayout></RequireAdmin>} />
+        <Route path="/communication" element={<RequireAdmin><AdminLayout><Communication /></AdminLayout></RequireAdmin>} />
+        <Route path="/help-center" element={<RequireAdmin><AdminLayout><HelpCenter /></AdminLayout></RequireAdmin>} />
       </Routes>
     </BrowserRouter>
   )

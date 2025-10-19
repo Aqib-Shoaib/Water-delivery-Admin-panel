@@ -6,6 +6,7 @@ import AddProductModal from '../components/modals/AddProductModal.jsx'
 import EditProductModal from '../components/modals/EditProductModal.jsx'
 import ConfirmModal from '../components/modals/ConfirmModal.jsx'
 import ProductDetailModal from '../components/modals/ProductDetailModal.jsx'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
@@ -14,6 +15,8 @@ export default function Products() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [range, setRange] = useState({ start: '', end: '' })
+  const [stock, setStock] = useState({ items: [], totals: {} })
   const [showAdd, setShowAdd] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
@@ -39,7 +42,26 @@ export default function Products() {
     }
   }, [token])
 
+  const loadStock = useCallback(async () => {
+    try {
+      const qs = []
+      if (range.start) qs.push(`start=${encodeURIComponent(range.start)}`)
+      if (range.end) qs.push(`end=${encodeURIComponent(range.end)}`)
+      const q = qs.length ? `?${qs.join('&')}` : ''
+      const res = await fetch(`${API_BASE}/api/products/analytics/stock${q}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setStock({ items: Array.isArray(data.items) ? data.items : [], totals: data.totals || {} })
+    } catch (e) {
+      // Surface as non-blocking inline error
+      console.error('stock analytics error', e)
+    }
+  }, [token, range.start, range.end])
+
   useEffect(() => { load() }, [load])
+  useEffect(() => { loadStock() }, [loadStock])
   const onCreated = async () => { await load() }
   const onSaved = async () => { await load() }
 
@@ -61,6 +83,62 @@ export default function Products() {
 
   return (
     <div className="space-y-6">
+      {/* Analytics header with date range */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-primary">Product Analytics</h2>
+            <p className="text-xs text-gray-500">Inbound vs Outbound vs On-hand</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="date" value={range.start} onChange={(e)=>setRange(r=>({...r,start:e.target.value}))} className="border rounded px-2 py-1 text-sm" />
+            <input type="date" value={range.end} onChange={(e)=>setRange(r=>({...r,end:e.target.value}))} className="border rounded px-2 py-1 text-sm" />
+            <Button variant="secondary" onClick={loadStock}>Apply</Button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+          {/* Totals by category (bottles vs dispensers) */}
+          <div className="bg-white rounded-lg p-3 shadow">
+            <div className="text-sm font-semibold mb-2">Totals by Category</div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[
+                  { category: 'Bottles', inbound: stock.totals?.bottle?.inbound||0, outbound: stock.totals?.bottle?.outbound||0, onHand: stock.totals?.bottle?.onHand||0 },
+                  { category: 'Dispensers', inbound: stock.totals?.dispenser?.inbound||0, outbound: stock.totals?.dispenser?.outbound||0, onHand: stock.totals?.dispenser?.onHand||0 },
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="category" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="inbound" fill="#34d399" name="Inbound" />
+                  <Bar dataKey="outbound" fill="#60a5fa" name="Outbound" />
+                  <Bar dataKey="onHand" fill="#f59e0b" name="On-hand" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          {/* Per product (top 10 by outbound) */}
+          <div className="bg-white rounded-lg p-3 shadow">
+            <div className="text-sm font-semibold mb-2">Top Products (Outbound)</div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[...stock.items].sort((a,b)=> (b.outbound||0)-(a.outbound||0)).slice(0,10)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} angle={-20} textAnchor="end" height={60} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="inbound" fill="#34d399" name="Inbound" />
+                  <Bar dataKey="outbound" fill="#60a5fa" name="Outbound" />
+                  <Bar dataKey="onHand" fill="#f59e0b" name="On-hand" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div>

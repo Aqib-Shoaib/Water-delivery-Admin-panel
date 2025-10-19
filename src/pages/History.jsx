@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
@@ -26,10 +27,12 @@ export default function History() {
     completedOrders: 0,
     pendingOrders: 0,
     cancelledOrders: 0,
+    codOrders: 0,
     inHandDispensers: 0,
     outHandDispensers: 0,
     damagedDispensers: 0,
     clients: 0,
+    newClients: 0,
     discontinuedClients: 0,
     inboundBottles: 0,
     outboundBottles: 0,
@@ -40,22 +43,36 @@ export default function History() {
     waitingEmployees: 0,
     revenue: 0,
   })
+  const [pl, setPL] = useState({ revenue: 0, expenses: 0, profit: 0 })
+  const [vendorsPaid, setVendorsPaid] = useState(0)
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
       if (range) params.set('range', range)
       if (range === 'custom') { if (from) params.set('from', from); if (to) params.set('to', to) }
-      const res = await fetch(`${API_BASE}/api/history/summary?${params.toString()}`, { headers })
-      if (res.ok) {
-        const json = await res.json()
+      const [resHist, resPL, resVendors] = await Promise.all([
+        fetch(`${API_BASE}/api/history/summary?${params.toString()}`, { headers }),
+        fetch(`${API_BASE}/api/finance/reports/profit-loss`, { headers }),
+        fetch(`${API_BASE}/api/finance/reports/vendors-paid`, { headers }),
+      ])
+      if (resHist.ok) {
+        const json = await resHist.json()
         setData(d => ({ ...d, ...json }))
       }
+      if (resPL.ok) {
+        const json = await resPL.json()
+        setPL({ revenue: json.revenue||0, expenses: json.expenses||0, profit: json.profit||0 })
+      }
+      if (resVendors.ok) {
+        const json = await resVendors.json()
+        setVendorsPaid(json.totalPaid||0)
+      }
     } finally { setLoading(false) }
-  }
+  }, [headers, range, from, to])
 
-  useEffect(() => { if (token) load() }, [token])
+  useEffect(() => { if (token) load() }, [token, load])
 
   function downloadPDF() {
     // Simple print-to-PDF approach (no extra deps). Opens a printable view.
@@ -104,8 +121,8 @@ export default function History() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-lg font-semibold text-primary">History</h2>
-          <p className="text-sm text-gray-600">Aggregated historical metrics with time filters.</p>
+          <h2 className="text-lg font-semibold text-primary">History & Reports</h2>
+          <p className="text-sm text-gray-600">Aggregated metrics with charts and time filters.</p>
         </div>
         <div className="flex gap-2">
           <button onClick={downloadPDF} className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Download PDF</button>
@@ -132,26 +149,147 @@ export default function History() {
       </div>
 
       {loading ? <div className="p-3 text-sm text-gray-500">Loading...</div> : (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            <Donut value={data.completedOrders} label="Total completed orders" />
-            <Donut value={data.pendingOrders} label="Total pending orders" />
-            <Donut value={data.cancelledOrders} label="Total cancelled orders" />
-            <Donut value={data.inHandDispensers} label="Total in hand dispensers" />
-            <Donut value={data.outHandDispensers} label="Total out hand dispensers" />
-            <Donut value={data.damagedDispensers} label="Total damaged dispensers" />
-            <Donut value={data.clients} label="Total clients" />
-            <Donut value={data.discontinuedClients} label="Total discontinued clients" />
-            <Donut value={data.inboundBottles} label="Total in bound bottles" />
-            <Donut value={data.outboundBottles} label="Total out bound bottles" />
-            <Donut value={data.suppliers} label="Total number of suppliers" />
-            <Donut value={data.workingEmployees} label="Total working employee" />
-            <Donut value={data.rejectedEmployees} label="Total rejected employee" />
-            <Donut value={data.terminatedEmployees} label="Total terminated employee" />
-            <Donut value={data.waitingEmployees} label="Total waiting list" />
-            <Donut value={data.revenue} label="Total revenue" />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {/* Orders group */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="text-sm font-semibold mb-2">Orders</div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[{ label: 'Orders', completed: data.completedOrders, pending: data.pendingOrders, cancelled: data.cancelledOrders, cod: data.codOrders }]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="completed" fill="#34d399" name="Completed" />
+                  <Bar dataKey="pending" fill="#60a5fa" name="Pending" />
+                  <Bar dataKey="cancelled" fill="#ef4444" name="Cancelled" />
+                  <Bar dataKey="cod" fill="#f59e0b" name="Cash on Delivery" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </>
+
+          {/* Dispensers group */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="text-sm font-semibold mb-2">Dispensers</div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[{ label: 'Dispensers', inHand: data.inHandDispensers, outBound: data.outHandDispensers, damaged: data.damagedDispensers }]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="inHand" fill="#60a5fa" name="In hand" />
+                  <Bar dataKey="outBound" fill="#34d399" name="Out bound" />
+                  <Bar dataKey="damaged" fill="#ef4444" name="Damaged" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Clients group */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="text-sm font-semibold mb-2">Clients</div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[{ label: 'Clients', total: data.clients, new: data.newClients, discontinued: data.discontinuedClients }]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="total" fill="#60a5fa" name="Total" />
+                  <Bar dataKey="new" fill="#34d399" name="New (15 days)" />
+                  <Bar dataKey="discontinued" fill="#ef4444" name="Discontinued" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Bottles group */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="text-sm font-semibold mb-2">Bottles</div>
+            <div className="h-64">
+              {(() => {
+                const inHand = Math.max(0, (data.inboundBottles||0) - (data.outboundBottles||0))
+                const rows = [{ label: 'Bottles', inbound: data.inboundBottles, outbound: data.outboundBottles, inHand }]
+                return (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={rows}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="label" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="inbound" fill="#34d399" name="Inbound" />
+                      <Bar dataKey="outbound" fill="#60a5fa" name="Outbound" />
+                      <Bar dataKey="inHand" fill="#f59e0b" name="In hand" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )
+              })()}
+            </div>
+          </div>
+
+          {/* Company & Areas group (placeholders if unavailable) */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="text-sm font-semibold mb-2">Suppliers & Areas</div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[{ label: 'Counts', suppliers: data.suppliers, areas: 0 }]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="suppliers" fill="#60a5fa" name="Suppliers" />
+                  <Bar dataKey="areas" fill="#a78bfa" name="Areas/Locations" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Employees group */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="text-sm font-semibold mb-2">Employees</div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[{ label: 'Employees', working: data.workingEmployees, cancelled: data.rejectedEmployees, terminated: data.terminatedEmployees, waiting: data.waitingEmployees }]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="working" fill="#34d399" name="Working" />
+                  <Bar dataKey="cancelled" fill="#f59e0b" name="Cancelled" />
+                  <Bar dataKey="terminated" fill="#ef4444" name="Terminated" />
+                  <Bar dataKey="waiting" fill="#60a5fa" name="Waiting" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Finance group */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="text-sm font-semibold mb-2">Finance</div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[{ label: 'Finance', revenue: pl.revenue||0, expenses: pl.expenses||0, vendorsPaid: vendorsPaid||0 }]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#34d399" name="Revenue" />
+                  <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
+                  <Bar dataKey="vendorsPaid" fill="#60a5fa" name="Paid to Vendors" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

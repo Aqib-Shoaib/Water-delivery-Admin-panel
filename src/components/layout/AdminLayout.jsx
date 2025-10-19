@@ -14,11 +14,11 @@ export default function AdminLayout({ children }) {
   const { settings } = useSettings()
 
   return (
-    <div className="h-screen w-screen bg-gray-50 text-gray-900 grid grid-cols-[250px_1fr] overflow-hidden">
+    <div className="h-screen w-screen bg-gray-50 text-gray-900 grid grid-cols-[320px_1fr] overflow-hidden">
       <Sidebar settings={settings} />
 
       <div className="grid grid-rows-[auto_1fr] h-screen">
-        <Topbar onMenu={() => setOpen(true)} onRequestLogout={() => setShowLogoutConfirm(true)} settings={settings} />
+        <Topbar onMenu={() => setOpen(true)} onRequestLogout={() => setShowLogoutConfirm(true)} />
 
         <main className="py-4 md:py-6 px-4 h-full overflow-y-auto">
           {children}
