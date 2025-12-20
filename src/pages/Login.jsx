@@ -13,6 +13,7 @@ export default function Login() {
   const [showForgot, setShowForgot] = useState(false)
   const [fpEmail, setFpEmail] = useState('')
   const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+  console.log(API_BASE)
 
   async function onSubmit(e) {
     e.preventDefault()
