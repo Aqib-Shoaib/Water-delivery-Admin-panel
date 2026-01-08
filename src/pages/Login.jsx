@@ -46,7 +46,7 @@ export default function Login() {
               <div className="bg-primary w-32 h-32 flex items-center justify-center mx-auto mb-4">
                 <img src="/liflon-logo.jpeg" alt="liflon logo" />
               </div>
-                <p>Liflion - A Product of KSHEALTHPLUS</p>
+                <p>Liflion- A Product of 'KS Health Plus Company</p>
               </div>
               <h1 className="text-2xl font-bold text-primary mb-2">Admin Dashboard</h1>
               <p className="text-gray-600">Sign in to your account</p>
