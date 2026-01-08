@@ -5,7 +5,7 @@ import Input from '../components/ui/Input.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Profile() {
-  const { user, token, refreshMe, updateMe } = useAuth()
+  const { user, token, updateMe } = useAuth()
   const [form, setForm] = useState({
     name: '',
     firstName: '',
@@ -36,6 +36,32 @@ export default function Profile() {
     deductions: '',
     status: ''
   })
+  
+  // Helper function to generate full name from first and last name
+  const generateFullName = (firstName, lastName) => {
+    const first = firstName?.trim() || ''
+    const last = lastName?.trim() || ''
+    if (first && last) return `${first} ${last}`
+    if (first) return first
+    if (last) return last
+    return ''
+  }
+
+  // Helper function to parse full name into first and last name
+  const parseFullName = (fullName) => {
+    const name = fullName?.trim() || ''
+    if (!name) return { firstName: '', lastName: '' }
+    
+    const parts = name.split(/\s+/).filter(part => part.length > 0)
+    if (parts.length === 1) {
+      return { firstName: parts[0], lastName: '' }
+    } else if (parts.length === 2) {
+      return { firstName: parts[0], lastName: parts[1] }
+    } else {
+      // More than 2 parts: first name is first part, last name is last part, middle names are ignored for firstName/lastName fields
+      return { firstName: parts[0], lastName: parts[parts.length - 1] }
+    }
+  }
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -49,8 +75,6 @@ export default function Profile() {
   const [resignationForm, setResignationForm] = useState({ date:'', reason:'', finalSettlement:'', fileUrl:'' })
 
   const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
-
-  useEffect(() => { refreshMe?.() }, [refreshMe])
 
   useEffect(() => {
     if (!user) return
@@ -84,6 +108,37 @@ export default function Profile() {
       status: user.status || ''
     })
   }, [user])
+
+  // Auto-sync name field when firstName or lastName changes
+  useEffect(() => {
+    const fullName = generateFullName(form.firstName, form.lastName)
+    if (fullName && fullName !== form.name) {
+      setForm(prev => ({ ...prev, name: fullName }))
+    }
+  }, [form.firstName, form.lastName, form.name])
+
+  // Auto-sync firstName/lastName when name field changes
+  const handleNameChange = (e) => {
+    const newName = e.target.value
+    setForm(prev => ({ ...prev, name: newName }))
+    
+    const parsed = parseFullName(newName)
+    setForm(prev => ({ 
+      ...prev, 
+      firstName: parsed.firstName, 
+      lastName: parsed.lastName 
+    }))
+  }
+
+  const handleFirstNameChange = (e) => {
+    const newFirstName = e.target.value
+    setForm(prev => ({ ...prev, firstName: newFirstName }))
+  }
+
+  const handleLastNameChange = (e) => {
+    const newLastName = e.target.value
+    setForm(prev => ({ ...prev, lastName: newLastName }))
+  }
 
   const readOnly = useMemo(() => ({
     email: user?.email || '',
@@ -164,10 +219,27 @@ export default function Profile() {
         </div>
 
         <form onSubmit={onSubmit} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input label="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+          <div className="md:col-span-2">
+            <Input 
+              label="Full Name" 
+              value={form.name} 
+              onChange={handleNameChange} 
+              placeholder="Enter full name (supports middle names)" 
+            />
+          </div>
+          <Input 
+            label="First Name" 
+            value={form.firstName} 
+            onChange={handleFirstNameChange} 
+            placeholder="Auto-extracted from full name" 
+          />
+          <Input 
+            label="Last Name" 
+            value={form.lastName} 
+            onChange={handleLastNameChange} 
+            placeholder="Auto-extracted from full name" 
+          />
           <Input label="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-          <Input label="First name" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
-          <Input label="Last name" value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Date of birth</label>
             <input type="date" className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500" value={form.dob} onChange={e => setForm({ ...form, dob: e.target.value })} />

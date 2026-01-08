@@ -30,6 +30,7 @@ import PayrollSettings from './pages/PayrollSettings.jsx'
 import Finance from './pages/Finance.jsx'
 import Communication from './pages/Communication.jsx'
 import HelpCenter from './pages/HelpCenter.jsx'
+import Vendors from './pages/Vendors.jsx'
 
 function RequireAuth({ children }) {
   const { isAuthed } = useAuth()
@@ -80,6 +81,7 @@ function App() {
         <Route path="/payroll" element={<RequireAdmin><AdminLayout><Payroll /></AdminLayout></RequireAdmin>} />
         <Route path="/payroll-settings" element={<RequireAdmin><AdminLayout><PayrollSettings /></AdminLayout></RequireAdmin>} />
         <Route path="/finance" element={<RequireAdmin><AdminLayout><Finance /></AdminLayout></RequireAdmin>} />
+        <Route path="/vendors" element={<RequireAdmin><AdminLayout><Vendors /></AdminLayout></RequireAdmin>} />
         <Route path="/communication" element={<RequireAdmin><AdminLayout><Communication /></AdminLayout></RequireAdmin>} />
         <Route path="/help-center" element={<RequireAdmin><AdminLayout><HelpCenter /></AdminLayout></RequireAdmin>} />
       </Routes>

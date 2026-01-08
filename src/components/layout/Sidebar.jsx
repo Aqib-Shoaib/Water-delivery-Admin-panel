@@ -12,6 +12,7 @@ import { SiAmazonecs } from "react-icons/si";
 import { LuLogs } from "react-icons/lu";
 import { BsCashCoin } from "react-icons/bs";
 import { RxSection } from "react-icons/rx";
+import { FaStore } from "react-icons/fa";
 
 
 export default function Sidebar({ settings }) {
@@ -75,28 +76,31 @@ export default function Sidebar({ settings }) {
           )}
         </div>
         <SidebarNavItem to="/departments" label="Departments" icon={<RxSection />} />
-        {hasPermission && hasPermission('finance:read') && (
+        {hasPermission('finance:read') && (
           <SidebarNavItem to="/finance" label="Finance" icon={<BsCashCoin />} />
+        )}
+        {hasPermission('vendors:read') && (
+          <SidebarNavItem to="/vendors" label="Vendors" icon={<FaStore />} />
         )}
         <SidebarNavItem to="/products" label="Products & Services" icon={<MdOutlineShoppingBag />} />
         <SidebarNavItem to="/orders" label="Order Management" icon={<MdOutlineShoppingBasket />} />
-        {hasPermission && hasPermission('assets:read') && (
+        {hasPermission('assets:read') && (
           <SidebarNavItem to="/assets" label="Asset Management" icon={<CiDatabase />} />
         )}
-        {hasPermission && hasPermission('analytics:read') && (
+        {hasPermission('analytics:read') && (
           <SidebarNavItem to="/history" label="History & Reports" icon={<TbReportSearch />} />
         )}
         <SidebarNavItem to="/communication" label="Communication & Complaints" icon={<AiOutlineIssuesClose />} />
-        {hasPermission && hasPermission('settings:write') && (
+        {hasPermission('settings:write') && (
           <SidebarNavItem to="/about" label="About" icon={<IoIosInformationCircleOutline />} />
         )}
-        {hasPermission && hasPermission('settings:write') && (
+        {hasPermission('settings:write') && (
           <SidebarNavItem to="/help-center" label="Help Center" icon={<BiSupport />} />
         )}
-        {hasPermission && hasPermission('settings:write') && (
+        {hasPermission('settings:write') && (
           <SidebarNavItem to="/contact" label="Contact" icon={<MdOutlinePhone />} />
         )}
-        {hasPermission && hasPermission('users:write') && (
+        {hasPermission('users:write') && (
           <SidebarNavItem to="/invite" label="Invite" icon={<MdOutlineAlternateEmail />} />
         )}
         {/*

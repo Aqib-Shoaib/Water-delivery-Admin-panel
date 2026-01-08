@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import VendorsManager from '../components/finance/VendorsManager.jsx'
 
 function useQueryTab(defaultTab) {
   const location = useLocation()
@@ -41,7 +42,6 @@ export default function Finance() {
   const [error, setError] = useState(null)
   const [overview, setOverview] = useState(null)
   const [expenses, setExpenses] = useState({ items: [], total: 0 })
-  const [vendors, setVendors] = useState({ items: [], total: 0 })
   const [accounts, setAccounts] = useState([])
   const [pos, setPOs] = useState({ items: [], total: 0 })
   const [pl, setPL] = useState(null)
@@ -50,11 +50,9 @@ export default function Finance() {
 
   // Add modals state
   const [showExpenseModal, setShowExpenseModal] = useState(false)
-  const [showVendorModal, setShowVendorModal] = useState(false)
   const [showBankModal, setShowBankModal] = useState(false)
 
   const [expenseForm, setExpenseForm] = useState({ date: '', category: '', amount: '', vendorId: '', paymentMethod: 'cash', notes: '' })
-  const [vendorForm, setVendorForm] = useState({ name: '', email: '', phone: '', address: '', paymentTermsDays: 30 })
   const [bankForm, setBankForm] = useState({ name: '', type: 'bank', bankName: '', accountNumber: '', openingBalance: '', currency: 'USD' })
 
   useEffect(() => {
@@ -70,7 +68,6 @@ export default function Finance() {
         const tasks = []
         if (canSee.dashboard) tasks.push(fetch(`${API_BASE}/api/finance/dashboard/overview${qstr}`, { headers }))
         if (canSee.expenses) tasks.push(fetch(`${API_BASE}/api/finance/expenses`, { headers }))
-        if (canSee.vendors) tasks.push(fetch(`${API_BASE}/api/finance/vendors`, { headers }))
         if (canSee.bank) tasks.push(fetch(`${API_BASE}/api/finance/bank/accounts`, { headers }))
         if (canSee.pos) tasks.push(fetch(`${API_BASE}/api/finance/purchase-orders`, { headers }))
         if (canSee.reports) tasks.push(fetch(`${API_BASE}/api/finance/reports/profit-loss${qstr}`, { headers }))
@@ -78,7 +75,6 @@ export default function Finance() {
         let i = 0
         if (canSee.dashboard) { const d = await resps[i++].json(); setOverview(d) }
         if (canSee.expenses) { const d = await resps[i++].json(); setExpenses(d) }
-        if (canSee.vendors) { const d = await resps[i++].json(); setVendors(d) }
         if (canSee.bank) { const d = await resps[i++].json(); setAccounts(d.items || []) }
         if (canSee.pos) { const d = await resps[i++].json(); setPOs(d) }
         if (canSee.reports) { const d = await resps[i++].json(); setPL(d) }
@@ -106,23 +102,6 @@ export default function Finance() {
       setReloadKey(k => k + 1)
     } catch {
       alert('Failed to add expense')
-    }
-  }
-
-  async function submitVendor(e) {
-    e?.preventDefault()
-    try {
-      const res = await fetch(`${API_BASE}/api/finance/vendors`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(vendorForm)
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setShowVendorModal(false)
-      setVendorForm({ name: '', email: '', phone: '', address: '', paymentTermsDays: 30 })
-      setReloadKey(k => k + 1)
-    } catch {
-      alert('Failed to add vendor')
     }
   }
 
@@ -238,42 +217,6 @@ export default function Finance() {
         </div>
       )}
 
-      {showVendorModal && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow w-full max-w-md">
-            <form onSubmit={submitVendor}>
-              <div className="px-4 py-3 border-b font-semibold">Add Vendor</div>
-              <div className="p-4 space-y-3 text-sm">
-                <label className="block">
-                  <div className="mb-1 text-gray-700">Name</div>
-                  <input type="text" required className="w-full border rounded px-2 py-1" value={vendorForm.name} onChange={e=>setVendorForm(f=>({...f,name:e.target.value}))} />
-                </label>
-                <label className="block">
-                  <div className="mb-1 text-gray-700">Email</div>
-                  <input type="email" className="w-full border rounded px-2 py-1" value={vendorForm.email} onChange={e=>setVendorForm(f=>({...f,email:e.target.value}))} />
-                </label>
-                <label className="block">
-                  <div className="mb-1 text-gray-700">Phone</div>
-                  <input type="text" className="w-full border rounded px-2 py-1" value={vendorForm.phone} onChange={e=>setVendorForm(f=>({...f,phone:e.target.value}))} />
-                </label>
-                <label className="block">
-                  <div className="mb-1 text-gray-700">Address</div>
-                  <textarea rows="2" className="w-full border rounded px-2 py-1" value={vendorForm.address} onChange={e=>setVendorForm(f=>({...f,address:e.target.value}))}></textarea>
-                </label>
-                <label className="block">
-                  <div className="mb-1 text-gray-700">Payment Terms (days)</div>
-                  <input type="number" min="0" className="w-full border rounded px-2 py-1" value={vendorForm.paymentTermsDays} onChange={e=>setVendorForm(f=>({...f,paymentTermsDays:Number(e.target.value||0)}))} />
-                </label>
-              </div>
-              <div className="px-4 py-3 border-t flex items-center justify-end gap-2">
-                <button type="button" onClick={()=>setShowVendorModal(false)} className="px-3 py-1.5 rounded border">Cancel</button>
-                <button type="submit" className="px-3 py-1.5 rounded bg-primary text-white">Save</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {showBankModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-lg shadow w-full max-w-md">
@@ -341,28 +284,7 @@ export default function Finance() {
         </div>
       )}
 
-      {tab==='vendors' && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-4 border-b flex items-center justify-between">
-            <span className="text-sm font-semibold">Vendors</span>
-            <button type="button" onClick={() => setShowVendorModal(true)} className="inline-flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded-md text-xs hover:bg-primary/90">
-              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg>
-              Add Vendor
-            </button>
-          </div>
-          <div className="divide-y">
-            {(vendors.items||[]).map(v => (
-              <div key={v._id} className="p-4 grid grid-cols-1 md:grid-cols-5 gap-2 text-sm">
-                <div className="font-medium">{v.name}</div>
-                <div>{v.email||'-'}</div>
-                <div>{v.phone||'-'}</div>
-                <div>{v.paymentTermsDays} days</div>
-                <div className="text-right">{Number(v.balance||0).toLocaleString()}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {tab==='vendors' && <VendorsManager />}
 
       {tab==='bank' && (
         <div className="bg-white rounded-lg shadow">
